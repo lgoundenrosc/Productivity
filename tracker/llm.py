@@ -47,6 +47,7 @@ EVENT_SCHEMA = _obj({"events": {"type": "array", "items": _obj({
     "start_time": {"type": "string", "description": "e.g. 10:00 AM ET, or empty"},
     "location": S,
     "format": {"type": "string", "enum": ["in-person", "virtual", "hybrid", "unknown"]},
+    "dc_area": {"type": "boolean", "description": "Held in DC, Northern Virginia or suburban Maryland"},
     "speakers": {"type": "array", "items": S},
     "summary": {"type": "string", "description": "One or two sentences"},
     "url": S,

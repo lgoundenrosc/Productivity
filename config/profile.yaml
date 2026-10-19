@@ -37,7 +37,8 @@ categories:
   - {id: other,     name: "Other national security"}
 
 # Added to Claude's score by format, so in-person events rank first and
-# online-only ones need a stronger topic to make the cut.
+# online-only ones need a stronger topic to make the cut. The in-person bonus
+# applies only to events in the DC area.
 format_bonus: {in-person: 1, hybrid: 0, virtual: -1, unknown: 0}
 
 min_score: 5        # events below this are dropped from the digest

@@ -133,7 +133,11 @@ def main():
     bonus = profile.get("format_bonus", {})
     for e in events:
         if "score" in e:
-            e["score"] = max(1, min(10, e["score"] + bonus.get(e.get("format", "unknown"), 0)))
+            fmt = e.get("format", "unknown")
+            # An in-person event in Chicago is not one you can walk to.
+            if fmt == "in-person" and e.get("dc_area") is False:
+                fmt = "unknown"
+            e["score"] = max(1, min(10, e["score"] + bonus.get(fmt, 0)))
 
     body = digest.build(events, profile, today, failures)
     if args.dry_run:
