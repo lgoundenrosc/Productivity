@@ -8,9 +8,12 @@ interests: >
   Early-stage startups and venture capital in defense and dual-use tech;
   deep tech; robotics, autonomy and drones; space; AI and compute; defense
   acquisition reform, DIU, OTAs, PPBE, the Office of Strategic Capital and
-  the defense industrial base; critical minerals and critical materials
-  (rare earths, magnets, battery materials, processing and refining, supply
-  chains, stockpiling and the financing behind them); export controls and
+  the defense industrial base; critical minerals (mining, processing and
+  refining, rare earths, stockpiling and the financing behind them);
+  advanced and critical materials as materials science (new alloys,
+  composites, ceramics, metamaterials, materials discovery); supply chains
+  as they touch startups (magnets, motors, batteries, energetics, components
+  and domestic manufacturing that hardware startups depend on); export controls and
   US-China tech competition; quantum. Separately, a personal interest in AI x biosecurity,
   biological, chemical and nuclear (WMD) risk, and AI safety as it bears on
   catastrophic misuse.
@@ -41,7 +44,9 @@ categories:
   - {id: defense,   name: "Defense tech, acquisition and industrial base"}
   - {id: ai,        name: "AI and compute"}
   - {id: aibio,     name: "AI x bio and WMD risk"}
-  - {id: minerals,  name: "Critical minerals and materials"}
+  - {id: minerals,  name: "Critical minerals: mining, processing and refining"}
+  - {id: materials, name: "Advanced materials and materials science"}
+  - {id: supply,    name: "Supply chains and manufacturing for startups"}
   - {id: robotics,  name: "Robotics, autonomy and drones"}
   - {id: space,     name: "Space"}
   - {id: china,     name: "China and tech competition"}

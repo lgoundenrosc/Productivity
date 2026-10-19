@@ -42,7 +42,7 @@ networking:
 # rest are covered by a search agent.
 universities:
   - {id: gwu, name: George Washington University, url: "https://calendar.gwu.edu", fetch: localist,
-     keywords: "startup|venture|entrepreneur|founder|investor|pitch (competition|day|night)|defen[cs]e|national security|military|space (policy|industry|force|economy)|satellite|robot|drone|autonom|artificial intelligence|\\bAI\\b|cyber|quantum|biotech|biosecurity|nuclear|semiconductor|china|technology policy|critical mineral|critical material|rare earth|lithium|supply chain"}
+     keywords: "startup|venture|entrepreneur|founder|investor|pitch (competition|day|night)|defen[cs]e|national security|military|space (policy|industry|force|economy)|satellite|robot|drone|autonom|artificial intelligence|\\bAI\\b|cyber|quantum|biotech|biosecurity|nuclear|semiconductor|china|technology policy|critical mineral|rare earth|lithium|mining|critical material|materials science|advanced materials|metamaterial|composite|magnet|supply chain|manufacturing"}
   - id: uni_search
     name: University search agent
     fetch: search
@@ -95,9 +95,10 @@ general_search:
       would want to attend: defense tech and dual-use startup events, venture
       capital and investor gatherings, happy hours and receptions, deep tech,
       robotics, autonomy, space, AI and AI safety, biosecurity and WMD policy,
-      critical minerals and critical materials (rare earths, magnets, battery
-      materials, processing, supply chains), defense acquisition and the
-      industrial base. Pure cybersecurity events are low priority. Concentrate on the next
+      critical minerals (mining, processing, refining, rare earths), advanced
+      materials and materials science, supply chains and manufacturing that
+      hardware startups depend on (magnets, motors, batteries, components),
+      defense acquisition and the industrial base. Pure cybersecurity events are low priority. Concentrate on the next
       three weeks; for major conferences, look up to four months out. Skip
       events hosted by these organizations, which are already covered:
       {covered}.
