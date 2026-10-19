@@ -50,8 +50,7 @@ categories:
   - {id: robotics,  name: "Robotics, autonomy and drones"}
   - {id: space,     name: "Space"}
   - {id: china,     name: "China and tech competition"}
-  - {id: cyber,     name: "Quantum, cyber and other emerging tech"}
-  - {id: other,     name: "Other national security"}
+  - {id: other,     name: "Other national security and emerging tech"}  # incl. quantum and relevant cyber
 
 # Added to Claude's score so DC-area events you can walk into rank first.
 # Online-only events need a stronger topic to make the cut.
