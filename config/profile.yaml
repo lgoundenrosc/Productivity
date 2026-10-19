@@ -1,0 +1,40 @@
+# Who the digest is for. This text goes to Claude verbatim when scoring.
+reader: >
+  Senior associate at a defense-focused pre-seed and seed venture fund in
+  Washington, DC. Attends events to meet founders, government buyers and
+  co-investors, and to track where defense money and policy are heading.
+
+interests: >
+  Early-stage startups and venture capital in defense and dual-use tech;
+  deep tech; robotics, autonomy and drones; space; AI and compute; defense
+  acquisition reform, DIU, OTAs, PPBE, the Office of Strategic Capital and
+  the defense industrial base; export controls and US-China tech competition;
+  cyber and quantum. Separately, a personal interest in AI x biosecurity,
+  biological, chemical and nuclear (WMD) risk, and AI safety as it bears on
+  catastrophic misuse.
+
+boost: >
+  Speakers from DIU, CDAO, DARPA, OSC, service acquisition executives, HASC
+  or SASC members and staff, defense tech founders and venture investors.
+  In-person DC-area events with networking or receptions.
+
+penalize: >
+  Regional diplomacy with no technology angle, domestic social policy, book
+  talks with no tech or defense angle, events outside the DC area (unless a
+  major defense or space conference), virtual-only webinars.
+
+# Digest sections, in display order. Claude assigns each event one category.
+categories:
+  - {id: venture,   name: "Startups, venture and deep tech"}
+  - {id: defense,   name: "Defense tech, acquisition and industrial base"}
+  - {id: ai,        name: "AI and compute"}
+  - {id: aibio,     name: "AI x bio and WMD risk"}
+  - {id: robotics,  name: "Robotics, autonomy and drones"}
+  - {id: space,     name: "Space"}
+  - {id: cyber,     name: "Cyber, quantum and other emerging tech"}
+  - {id: china,     name: "China and tech competition"}
+  - {id: other,     name: "Other national security"}
+
+min_score: 5        # events below this are dropped from the digest
+top_pick_score: 8   # events at or above this also appear under "Top picks"
+lookahead_days: 42

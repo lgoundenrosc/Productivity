@@ -1,0 +1,47 @@
+# Event sources. `fetch: browser` uses headless Chromium for sites that
+# reject plain HTTP clients. Sites behind Cloudflare/Incapsula challenges
+# (AUSA, Heritage, FDD, CSBA, Axios, NDIA) are left out on purpose; see README.
+
+# Each group runs as its own worker with its own Claude calls, so no one
+# context holds every page.
+think_tanks_defense:
+  - {id: csis,      name: CSIS,                         url: "https://www.csis.org/events"}
+  - {id: cnas,      name: CNAS,                         url: "https://www.cnas.org/events"}
+  - {id: hudson,    name: Hudson Institute,             url: "https://www.hudson.org/events"}
+  - {id: atlantic,  name: Atlantic Council,             url: "https://www.atlanticcouncil.org/events/"}
+  - {id: aei,       name: AEI,                          url: "https://www.aei.org/events/"}
+  - {id: mitchell,  name: Mitchell Institute,           url: "https://mitchellaerospacepower.org/events/"}
+  - {id: reagan,    name: Reagan Institute,             url: "https://www.reaganfoundation.org/reagan-institute/events/"}
+
+think_tanks_tech_policy:
+  - {id: cset,      name: CSET (Georgetown),            url: "https://cset.georgetown.edu/events/"}
+  - {id: scsp,      name: SCSP,                         url: "https://www.scsp.ai/events/"}
+  - {id: rand,      name: RAND,                         url: "https://www.rand.org/events.html", dc_only: true}
+  - {id: brookings, name: Brookings,                    url: "https://www.brookings.edu/events/"}
+  - {id: carnegie,  name: Carnegie Endowment,           url: "https://carnegieendowment.org/events"}
+
+other_orgs:
+  - {id: spacenews, name: SpaceNews,                    url: "https://spacenews.com/events/", fetch: browser}
+  - {id: afcea,     name: AFCEA,                        url: "https://www.afcea.org/events"}
+  - {id: poc,       name: Potomac Officers Club,        url: "https://www.potomacofficersclub.com/events/"}
+  - {id: darpa,     name: DARPA,                        url: "https://www.darpa.mil/events"}
+
+# Congressional committee meetings (Congress.gov API). A meeting is kept when
+# any of its committee names contains one of these strings.
+hill_committees:
+  - Armed Services
+  - Intelligence
+  - Strategic Competition
+  - Science, Space, and Technology
+  - Commerce, Science, and Transportation
+  - Homeland Security
+  - Foreign Affairs
+  - Foreign Relations
+  - Appropriations
+  - Small Business
+
+# SAM.gov special notices whose titles contain these phrases.
+sam_phrases:
+  - industry day
+  - proposers day
+  - proposers' day
