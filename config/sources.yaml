@@ -42,7 +42,7 @@ networking:
 # rest are covered by a search agent.
 universities:
   - {id: gwu, name: George Washington University, url: "https://calendar.gwu.edu", fetch: localist,
-     keywords: "startup|venture|entrepreneur|founder|investor|pitch (competition|day|night)|defen[cs]e|national security|military|space (policy|industry|force|economy)|satellite|robot|drone|autonom|artificial intelligence|\\bAI\\b|cyber|quantum|biotech|biosecurity|nuclear|semiconductor|china|technology policy"}
+     keywords: "startup|venture|entrepreneur|founder|investor|pitch (competition|day|night)|defen[cs]e|national security|military|space (policy|industry|force|economy)|satellite|robot|drone|autonom|artificial intelligence|\\bAI\\b|cyber|quantum|biotech|biosecurity|nuclear|semiconductor|china|technology policy|critical mineral|critical material|rare earth|lithium|supply chain"}
   - id: uni_search
     name: University search agent
     fetch: search
@@ -76,7 +76,9 @@ military:
       Capital, OUSD Research and Engineering, OUSD Acquisition and Sustainment,
       AFWERX and SpaceWERX, the Army (Army Futures Command, xTech, Army
       Applications Lab), the Navy (NavalX, Office of Naval Research), the
-      Marine Corps, the Space Force, DTRA, NGA, NRO, DARPA outreach events,
+      Marine Corps, the Space Force, DTRA, NGA, NRO, DARPA outreach events, the
+      Industrial Base Policy office and Defense Logistics Agency Strategic
+      Materials (critical minerals, DPA Title III awards, stockpiling),
       DHS Science and Technology, and In-Q-Tel. Keep industry days, reverse
       industry days, demo days, pitch days, office hours for startups, tech
       showcases and public talks by senior officials. Note any clearance or
@@ -93,7 +95,9 @@ general_search:
       would want to attend: defense tech and dual-use startup events, venture
       capital and investor gatherings, happy hours and receptions, deep tech,
       robotics, autonomy, space, AI and AI safety, biosecurity and WMD policy,
-      defense acquisition and the industrial base. Concentrate on the next
+      critical minerals and critical materials (rare earths, magnets, battery
+      materials, processing, supply chains), defense acquisition and the
+      industrial base. Pure cybersecurity events are low priority. Concentrate on the next
       three weeks; for major conferences, look up to four months out. Skip
       events hosted by these organizations, which are already covered:
       {covered}.
@@ -111,6 +115,8 @@ hill_committees:
   - Foreign Relations
   - Appropriations
   - Small Business
+  - Energy and Natural Resources
+  - Natural Resources
 
 # SAM.gov special notices whose titles contain these phrases.
 sam_phrases:

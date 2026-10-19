@@ -8,8 +8,10 @@ interests: >
   Early-stage startups and venture capital in defense and dual-use tech;
   deep tech; robotics, autonomy and drones; space; AI and compute; defense
   acquisition reform, DIU, OTAs, PPBE, the Office of Strategic Capital and
-  the defense industrial base; export controls and US-China tech competition;
-  cyber and quantum. Separately, a personal interest in AI x biosecurity,
+  the defense industrial base; critical minerals and critical materials
+  (rare earths, magnets, battery materials, processing and refining, supply
+  chains, stockpiling and the financing behind them); export controls and
+  US-China tech competition; quantum. Separately, a personal interest in AI x biosecurity,
   biological, chemical and nuclear (WMD) risk, and AI safety as it bears on
   catastrophic misuse.
 
@@ -29,6 +31,9 @@ penalize: >
   events aimed at a demographic or affinity group the reader would not be
   part of (for example a Black professionals' mixer or a women's investing
   event), student-only or alumni-only events, and members-only events.
+  Pure cybersecurity events (cyber defense, compliance, CMMC, zero trust,
+  threat intelligence) unless they tie directly to AI, space or defense tech
+  startups.
 
 # Digest sections, in display order. Claude assigns each event one category.
 categories:
@@ -36,10 +41,11 @@ categories:
   - {id: defense,   name: "Defense tech, acquisition and industrial base"}
   - {id: ai,        name: "AI and compute"}
   - {id: aibio,     name: "AI x bio and WMD risk"}
+  - {id: minerals,  name: "Critical minerals and materials"}
   - {id: robotics,  name: "Robotics, autonomy and drones"}
   - {id: space,     name: "Space"}
-  - {id: cyber,     name: "Cyber, quantum and other emerging tech"}
   - {id: china,     name: "China and tech competition"}
+  - {id: cyber,     name: "Quantum, cyber and other emerging tech"}
   - {id: other,     name: "Other national security"}
 
 # Added to Claude's score so DC-area events you can walk into rank first.
