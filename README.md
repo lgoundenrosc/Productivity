@@ -4,7 +4,9 @@ Every Monday at about 7am ET this emails a digest of upcoming DC events worth
 attending: think tank panels, defense and space industry events, congressional
 hearings, and federal industry days. Claude reads each events page, pulls out
 the events, scores each one against `config/profile.yaml`, and groups them by
-topic. Each event has an "Add to calendar" link that opens it prefilled in
+topic. Every event is labeled IN PERSON, HYBRID, ONLINE ONLY or FORMAT NOT
+LISTED. In-person events get a one-point score bonus and are listed first in
+each section; online-only events lose a point. Each event has an "Add to calendar" link that opens it prefilled in
 Google Calendar; clicking Save adds it.
 
 It runs on GitHub Actions on a schedule (`.github/workflows/weekly-digest.yml`).
@@ -60,7 +62,7 @@ To trigger a real send from GitHub: Actions > Weekly DC events digest > Run work
 ## Tuning
 
 - `config/profile.yaml`: interests, what to score up or down, the categories,
-  the score cutoff and how far ahead to look.
+  the in-person bonus (`format_bonus`), the score cutoff and how far ahead to look.
 - `config/sources.yaml`: sources, worker groups, the committee filter and the
   SAM.gov phrases.
 - `TRACKER_MODEL` env var: the Claude model (default `claude-opus-5-5`).

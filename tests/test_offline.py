@@ -78,3 +78,12 @@ def test_schedule_guard(monkeypatch):
         assert main.intended_slot_ok()
         dt.now.return_value = edt(2026, 12, 7, 11, 5, tzinfo=main.timezone.utc)   # EST: slot is 5:50
         assert not main.intended_slot_ok()
+
+
+def test_format_badges_and_in_person_first():
+    events = [ev(title="Webinar on drones", format="virtual", date="2026-10-20"),
+              ev(title="Drone panel at CSIS", format="in-person", date="2026-10-25")]
+    html = digest.build(events, PROFILE, date(2026, 10, 19), [])
+    section = html.split("Robotics, autonomy and drones")[1]
+    assert section.index("Drone panel at CSIS") < section.index("Webinar on drones")
+    assert "IN PERSON" in html and "ONLINE ONLY" in html

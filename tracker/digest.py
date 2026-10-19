@@ -37,10 +37,26 @@ def _when(ev):
     return f"{d:%a %b} {d.day}" + (f", {ev['start_time']}" if ev.get("start_time") else "")
 
 
+FORMAT_BADGES = {
+    "in-person": ("IN PERSON", "#e8f0fe", "#1a3d6d"),
+    "hybrid": ("HYBRID: IN PERSON OR ONLINE", "#fef7e0", "#7a4f01"),
+    "virtual": ("ONLINE ONLY", "#f1f3f4", "#5f6368"),
+    "unknown": ("FORMAT NOT LISTED", "#f1f3f4", "#5f6368"),
+}
+FORMAT_ORDER = {"in-person": 0, "hybrid": 1, "unknown": 2, "virtual": 3}
+
+
+def _badge(fmt):
+    label, bg, fg = FORMAT_BADGES.get(fmt, FORMAT_BADGES["unknown"])
+    return (f'<span style="background:{bg};color:{fg};font-size:11px;font-weight:600;'
+            f'padding:1px 6px;border-radius:8px;margin-right:6px">{label}</span>')
+
+
 def _card(ev, show_calendar=True):
     new = ' <span style="background:#e6f4ea;color:#137333;font-size:11px;padding:1px 6px;border-radius:8px">NEW</span>' if ev.get("is_new") else ""
     title = f'<a href="{e_(ev["url"])}" style="color:#1a3d6d;text-decoration:none">{e_(ev["title"])}</a>' if ev.get("url") else e_(ev["title"])
-    meta = " · ".join(filter(None, [_when(ev), e_(ev["source"]), e_(ev.get("format", "")) if ev.get("format") not in ("", "unknown") else ""]))
+    badge = _badge(ev.get("format") or "unknown") if ev["kind"] != "industry_day" else ""
+    meta = badge + " · ".join(filter(None, [_when(ev), e_(ev["source"]), e_(ev.get("location", ""))]))
     speakers = f'<div style="color:#555;font-size:13px">Speakers: {e_(", ".join(ev["speakers"][:6]))}</div>' if ev.get("speakers") else ""
     cal = f' &nbsp;<a href="{e_(calendar_link(ev))}" style="font-size:12px">Add to calendar</a>' if show_calendar else ""
     return f"""<div style="margin:0 0 14px 0">
@@ -58,6 +74,8 @@ def _section(name, cards):
 
 def build(events, profile, today, failures):
     by_date = lambda e: (e["date"], e.get("start_time", ""))
+    # Within a section, in-person events come first, then by date.
+    in_person_first = lambda e: (FORMAT_ORDER.get(e.get("format"), 2), e["date"], e.get("start_time", ""))
     keep = [e for e in events if e.get("score", 0) >= profile["min_score"]]
     regular = [e for e in keep if e["kind"] == "event"]
     hearings = sorted((e for e in keep if e["kind"] == "hearing"), key=by_date)
@@ -67,12 +85,12 @@ def build(events, profile, today, failures):
              f'<h1 style="font-size:22px">DC events: week of {today:%B} {today.day}</h1>',
              f'<p style="color:#555;font-size:13px">{len(regular)} events, {len(hearings)} hearings and '
              f'{len(notices)} industry-day notices scored {profile["min_score"]}+ out of {len(events)} found. '
-             'NEW marks events not in an earlier digest.</p>']
+             'In-person events are listed first in each section. NEW marks events not in an earlier digest.</p>']
     top = sorted((e for e in regular if e["score"] >= profile["top_pick_score"]),
-                 key=lambda e: (-e["score"], e["date"]))[:6]
+                 key=lambda e: (-e["score"], FORMAT_ORDER.get(e.get("format"), 2), e["date"]))[:6]
     parts.append(_section("Top picks", [_card(e) for e in top]))
     for cat in profile["categories"]:
-        evs = sorted((e for e in regular if e.get("category") == cat["id"]), key=by_date)
+        evs = sorted((e for e in regular if e.get("category") == cat["id"]), key=in_person_first)
         parts.append(_section(cat["name"], [_card(e) for e in evs]))
     parts.append(_section("Congressional hearings", [_card(e) for e in hearings]))
     parts.append(_section("Industry days and proposers days (SAM.gov, posted in the last two weeks)",

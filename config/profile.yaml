@@ -16,7 +16,8 @@ interests: >
 boost: >
   Speakers from DIU, CDAO, DARPA, OSC, service acquisition executives, HASC
   or SASC members and staff, defense tech founders and venture investors.
-  In-person DC-area events with networking or receptions.
+  In-person DC-area events, above all ones with networking or receptions.
+  In-person events take priority over online ones.
 
 penalize: >
   Regional diplomacy with no technology angle, domestic social policy, book
@@ -34,6 +35,10 @@ categories:
   - {id: cyber,     name: "Cyber, quantum and other emerging tech"}
   - {id: china,     name: "China and tech competition"}
   - {id: other,     name: "Other national security"}
+
+# Added to Claude's score by format, so in-person events rank first and
+# online-only ones need a stronger topic to make the cut.
+format_bonus: {in-person: 1, hybrid: 0, virtual: -1, unknown: 0}
 
 min_score: 5        # events below this are dropped from the digest
 top_pick_score: 8   # events at or above this also appear under "Top picks"

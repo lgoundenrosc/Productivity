@@ -130,6 +130,11 @@ def main():
             e["is_new"] = eid not in seen
             events.append(e)
 
+    bonus = profile.get("format_bonus", {})
+    for e in events:
+        if "score" in e:
+            e["score"] = max(1, min(10, e["score"] + bonus.get(e.get("format", "unknown"), 0)))
+
     body = digest.build(events, profile, today, failures)
     if args.dry_run:
         out = ROOT / "out" / "digest.html"
