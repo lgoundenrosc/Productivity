@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0 Safari/537.36")
-DROP_TAGS = ["script", "style", "noscript", "svg", "nav", "footer", "header",
-             "form", "iframe", "button", "select"]
+DROP_TAGS = ["script", "style", "noscript", "svg", "nav", "form", "iframe",
+             "button", "select"]
 
 
 def get_html(url, browser=False):
@@ -43,6 +43,11 @@ def page_text(html, base_url):
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(DROP_TAGS):
         tag.decompose()
+    # Drop the site banner and footer, but keep <header> elements inside event
+    # cards, which some sites (SpaceNews) use for the event title.
+    for tag in soup.find_all(["header", "footer"]):
+        if not tag.find_parent(["article", "main", "section", "li"]):
+            tag.decompose()
     for a in soup.find_all("a", href=True):
         href = urljoin(base_url, a["href"])
         label = a.get_text(" ", strip=True)

@@ -23,8 +23,8 @@ think_tanks_tech_policy:
 other_orgs:
   - {id: spacenews, name: SpaceNews,                    url: "https://spacenews.com/events/", fetch: browser}
   - {id: afcea,     name: AFCEA,                        url: "https://www.afcea.org/events"}
-  - {id: poc,       name: Potomac Officers Club,        url: "https://www.potomacofficersclub.com/events/"}
-  - {id: darpa,     name: DARPA,                        url: "https://www.darpa.mil/events"}
+  - {id: poc,       name: Potomac Officers Club,        url: "https://www.potomacofficersclub.com/upcoming-events/"}
+  - {id: darpa,     name: DARPA,                        url: "https://www.darpa.mil/events", fetch: browser}
 
 # Congressional committee meetings (Congress.gov API). A meeting is kept when
 # any of its committee names contains one of these strings.
