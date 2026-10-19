@@ -43,12 +43,12 @@ FORMAT_ORDER = {"in-person": 0, "hybrid": 1, "unknown": 2, "virtual": 3}
 
 def _badge(fmt):
     label, bg, fg = FORMAT_BADGES.get(fmt, FORMAT_BADGES["unknown"])
-    return (f'<span style="background:{bg};color:{fg};font-size:11px;font-weight:600;'
+    return (f'<span style="background:{bg};color:{fg};font-size:12px;font-weight:600;'
             f'padding:1px 6px;border-radius:8px;margin-right:6px">{label}</span>')
 
 
 def _card(ev, show_calendar=True):
-    pill = '<span style="background:{};color:{};font-size:11px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:6px">{}</span>'
+    pill = '<span style="background:{};color:{};font-size:12px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:6px">{}</span>'
     new = "".join([
         pill.format("#fce8e6", "#a50e0e", "THIS WEEK") if ev.get("this_week") else "",
         pill.format("#fff4e5", "#7a4f01", "TOP PICK") if ev.get("top_pick") else "",
@@ -60,19 +60,19 @@ def _card(ev, show_calendar=True):
     if ev.get("dc_area") is False and ev.get("format") != "virtual":
         where = f"<b>Travel:</b> {where}"
     meta = badge + " · ".join(filter(None, [_when(ev), e_(ev["source"]), where]))
-    speakers = f'<div style="color:#555;font-size:13px">Speakers: {e_(", ".join(ev["speakers"][:6]))}</div>' if ev.get("speakers") else ""
-    cal = f' &nbsp;<a href="{e_(calendar_link(ev))}" style="font-size:12px">Add to calendar</a>' if show_calendar else ""
+    speakers = f'<div style="color:#555;font-size:15px">Speakers: {e_(", ".join(ev["speakers"][:6]))}</div>' if ev.get("speakers") else ""
+    cal = f' &nbsp;<a href="{e_(calendar_link(ev))}" style="font-size:13px">Add to calendar</a>' if show_calendar else ""
     return f"""<div style="margin:0 0 14px 0">
 <div style="font-weight:600">{title}{new}</div>
-<div style="color:#444;font-size:13px">{meta}</div>{speakers}
-<div style="font-size:13px"><b>{ev.get('score', '')}/10</b> {e_(ev.get('reason', ''))}{cal}</div>
+<div style="color:#444;font-size:15px">{meta}</div>{speakers}
+<div style="font-size:15px"><b>{ev.get('score', '')}/10</b> {e_(ev.get('reason', ''))}{cal}</div>
 </div>"""
 
 
 def _section(name, cards):
     if not cards:
         return ""
-    return f'<h2 style="font-size:17px;border-bottom:1px solid #ddd;padding-bottom:4px;margin-top:28px">{e_(name)}</h2>' + "".join(cards)
+    return f'<h2 style="font-size:19px;border-bottom:1px solid #ddd;padding-bottom:4px;margin-top:28px">{e_(name)}</h2>' + "".join(cards)
 
 
 def build(events, profile, today, failures):
@@ -104,9 +104,9 @@ def build(events, profile, today, failures):
                          or e.get("worker") == "networking"), key=by_date)
     rest = [e for e in rest if e not in networking]
 
-    parts = ['<div style="font-family:Georgia,serif;max-width:680px;color:#111">',
-             f'<h1 style="font-size:22px">DC events: week of {today:%B} {today.day}</h1>',
-             f'<p style="color:#555;font-size:13px">{len(this_week)} events this week, '
+    parts = ['<div style="font-family:Georgia,serif;font-size:16px;max-width:680px;color:#111">',
+             f'<h1 style="font-size:24px">DC events: week of {today:%B} {today.day}</h1>',
+             f'<p style="color:#555;font-size:15px">{len(this_week)} events this week, '
              f'{len(networking)} happy hours and meetups, {len(rest)} more over the next three weeks '
              f'and {len(travel)} bigger events further out. DC events you can attend in person rank '
              'first. NEW marks events not in an earlier digest.</p>']
@@ -123,7 +123,7 @@ def build(events, profile, today, failures):
                           [_card(e, show_calendar=False) for e in notices]))
     if failures:
         items = "".join(f"<li>{e_(name)}: {e_(msg)}</li>" for name, msg in failures)
-        parts.append(f'<h2 style="font-size:15px;margin-top:28px;color:#a50e0e">Sources that failed this week</h2>'
-                     f'<ul style="font-size:13px;color:#555">{items}</ul>')
+        parts.append(f'<h2 style="font-size:17px;margin-top:28px;color:#a50e0e">Sources that failed this week</h2>'
+                     f'<ul style="font-size:15px;color:#555">{items}</ul>')
     parts.append("</div>")
     return "".join(parts)
