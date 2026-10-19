@@ -60,6 +60,11 @@ EVENT_SCHEMA = _obj({"events": {"type": "array", "items": _obj({
 })}})
 
 
+AUDIENCE_NOTE = (
+    "Drop events aimed at a specific demographic or affinity group (for example "
+    "events for a particular race, gender or ethnicity), student-only events such "
+    "as admissions or career fairs, and purely social events. ")
+
 NETWORKING_NOTE = (
     "This source is checked for networking. Keep happy hours, receptions, meetups, "
     "founder and investor gatherings, demo days and pitch nights, above all ones "
@@ -72,6 +77,7 @@ NETWORKING_NOTE = (
 def extract_events(source_name, text, today, until, dc_only=False, networking=False):
     where = ("Keep only events held in the Washington, DC area or online; "
              "drop events in other cities. " if dc_only else "")
+    where += AUDIENCE_NOTE
     if networking:
         where += NETWORKING_NOTE
     prompt = f"""Below is the text of the events page of {source_name}, captured on {today}.
@@ -87,6 +93,49 @@ for anything the page does not say. Do not invent speakers or details.
 {text}
 </page>"""
     return _json_call(prompt, EVENT_SCHEMA)["events"]
+
+
+SEARCH_TOOLS = [
+    {"type": "web_search_20260209", "name": "web_search", "max_uses": 10},
+    {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 10},
+]
+
+
+def search_text(focus, today, until, max_restarts=5):
+    """A search agent: Claude searches the web and reads event pages, then
+    writes up every event it found as plain text for extract_events().
+    Structured output can't be combined with web search citations, so the
+    write-up and the extraction are separate calls."""
+    prompt = f"""Today is {today}. Find upcoming events in the Washington, DC area
+(DC, Northern Virginia, suburban Maryland) dated {today} to {until}.
+
+{focus}
+
+Search the web and open event pages to confirm details. For every event you
+confirm, write one entry with: title, host, date, start time, venue or "online",
+whether it is in person, online or hybrid, speakers if listed, a one-sentence
+description, and the event or registration URL. Only include events you found on
+a real page; never guess dates or details. Skip events that are already over."""
+    messages = [{"role": "user", "content": prompt}]
+    for _ in range(max_restarts + 1):
+        resp = client().beta.messages.create(
+            model=MODEL,
+            max_tokens=16000,
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
+            output_config={"effort": "medium"},
+            tools=SEARCH_TOOLS,
+            messages=messages,
+        )
+        if resp.stop_reason == "refusal":
+            raise RuntimeError("Claude declined the search")
+        if resp.stop_reason != "pause_turn":
+            break
+        # The server-side search loop paused; resend so it resumes.
+        messages = [messages[0], {"role": "assistant", "content": resp.content}]
+    else:
+        raise RuntimeError("search still paused after restarts")
+    return "\n".join(b.text for b in resp.content if b.type == "text")
 
 
 def score_events(events, profile):

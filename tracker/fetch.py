@@ -57,10 +57,16 @@ def page_text(html, base_url):
     return re.sub(r"\n{2,}", "\n", text)
 
 
-def source_text(src, recent_days=30):
+def source_text(src, today=None, until=None, recent_days=30):
     """Text for one source, by its `fetch` type: http (default), browser,
-    luma (a Luma calendar or city page) or rss (a newsletter feed)."""
+    luma (a Luma calendar or city page), rss (a newsletter feed), localist
+    (a university calendar API) or search (a Claude web search agent)."""
     kind = src.get("fetch", "http")
+    if kind == "search":
+        from . import llm
+        return llm.search_text(src["focus"], today, until)
+    if kind == "localist":
+        return localist_text(src["url"], src.get("keywords", ""), today, until)
     if kind == "luma":
         return luma_text(src["url"])
     if kind == "rss":
@@ -123,3 +129,34 @@ def rss_text(url, recent_days):
         text = page_text(body.text if body else "", item.link.text if item.link else url)
         posts.append(f"## {item.title.text} (posted {posted:%B %d %Y}) <{item.link.text}>\n{text}")
     return "\n\n".join(posts)
+
+
+def localist_text(base, keywords, today, until):
+    """University calendars on Localist publish a JSON API. Pull the window,
+    keep events whose title or description matches `keywords`, and return one
+    line per event."""
+    from datetime import date, timedelta
+    today = today or date.today()
+    days = ((until or today + timedelta(days=21)) - today).days
+    pattern = re.compile(keywords, re.I) if keywords else None
+    lines, page = [], 1
+    while True:
+        r = requests.get(f"{base.rstrip('/')}/api/2/events", timeout=30,
+                         params={"start": today.isoformat(), "days": min(days, 90), "pp": 100, "page": page},
+                         headers={"User-Agent": UA})
+        r.raise_for_status()
+        data = r.json()
+        for item in data.get("events", []):
+            e = item["event"]
+            blob = f"{e.get('title', '')} {e.get('description_text', '')}"
+            if pattern and not pattern.search(blob):
+                continue
+            start = (e.get("event_instances") or [{}])[0].get("event_instance", {}).get("start", "")
+            lines.append(" | ".join(filter(None, [
+                e.get("title", "").strip(), start, e.get("location_name", ""),
+                e.get("experience", ""), (e.get("description_text") or "")[:300].replace("\n", " "),
+                f"<{e.get('localist_url', '')}>"])))
+        if page >= data.get("page", {}).get("total", 1) or page >= 10:
+            break
+        page += 1
+    return "\n".join(lines)

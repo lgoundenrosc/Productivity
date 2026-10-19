@@ -25,7 +25,10 @@ boost: >
 penalize: >
   Regional diplomacy with no technology angle, domestic social policy, book
   talks with no tech or defense angle, events outside the DC area (unless a
-  major defense or space conference), virtual-only webinars.
+  major defense or space conference), virtual-only webinars. Networking
+  events aimed at a demographic or affinity group the reader would not be
+  part of (for example a Black professionals' mixer or a women's investing
+  event), student-only or alumni-only events, and members-only events.
 
 # Digest sections, in display order. Claude assigns each event one category.
 categories:

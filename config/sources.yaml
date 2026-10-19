@@ -37,6 +37,67 @@ networking:
   - {id: eb_def,    name: Eventbrite (defense tech),    url: "https://www.eventbrite.com/d/dc--washington/defense-tech/"}
   - {id: eb_nat,    name: Eventbrite (national security), url: "https://www.eventbrite.com/d/dc--washington/national-security/"}
 
+# DC-area universities: startup ecosystem events first, then policy schools,
+# law schools and university-wide events. GWU publishes a calendar API; the
+# rest are covered by a search agent.
+universities:
+  - {id: gwu, name: George Washington University, url: "https://calendar.gwu.edu", fetch: localist,
+     keywords: "startup|venture|entrepreneur|founder|investor|pitch (competition|day|night)|defen[cs]e|national security|military|space (policy|industry|force|economy)|satellite|robot|drone|autonom|artificial intelligence|\\bAI\\b|cyber|quantum|biotech|biosecurity|nuclear|semiconductor|china|technology policy"}
+  - id: uni_search
+    name: University search agent
+    fetch: search
+    focus: >
+      Look for public events at these DC-area schools: Georgetown (Startup Hub,
+      McDonough School of Business, Walsh School of Foreign Service, Georgetown
+      Law), Johns Hopkins SAIS and the Hopkins Bloomberg Center, Texas A&M's
+      Bush School in DC, George Washington University (School of Business, the
+      New Venture Competition, Elliott School, GW Law) and George Mason (Schar
+      School, Mason Innovation Exchange, Antonin Scalia Law School) and the
+      University of Maryland (Dingman Center for Entrepreneurship, Smith School
+      of Business, Applied Research Lab for Intelligence and Security, and
+      university-wide events at College Park and its DC sites). For UVA,
+      only startup and incubator events in the DC area (Darden DC Metro, UVA
+      ventures programs). American University and Virginia Tech's Innovation
+      Campus are worth a quick
+      look for startup events only. Skip other schools. Startup ecosystem
+      events come first: pitch competitions, demo days, accelerator showcases,
+      founder and investor panels. Then public talks on national security,
+      defense technology, AI, space, biosecurity or tech policy. Skip
+      admissions events, student-only career events, athletics and arts.
+
+# The military services and Pentagon offices hosting events in and around DC.
+military:
+  - id: mil_search
+    name: Military and Pentagon search agent
+    fetch: search
+    focus: >
+      Look for events hosted or co-hosted by the military services and Defense
+      Department offices in and around DC: DIU, CDAO, the Office of Strategic
+      Capital, OUSD Research and Engineering, OUSD Acquisition and Sustainment,
+      AFWERX and SpaceWERX, the Army (Army Futures Command, xTech, Army
+      Applications Lab), the Navy (NavalX, Office of Naval Research), the
+      Marine Corps, the Space Force, DTRA, NGA, NRO, DARPA outreach events,
+      DHS Science and Technology, and In-Q-Tel. Keep industry days, reverse
+      industry days, demo days, pitch days, office hours for startups, tech
+      showcases and public talks by senior officials. Note any clearance or
+      registration requirement. Events outside DC count only if they are major
+      industry or pitch events a defense investor would travel for.
+
+# A general sweep for anything the named sources miss.
+general_search:
+  - id: gen_search
+    name: General search agent
+    fetch: search
+    focus: >
+      Look for events a defense-focused pre-seed and seed venture investor in DC
+      would want to attend: defense tech and dual-use startup events, venture
+      capital and investor gatherings, happy hours and receptions, deep tech,
+      robotics, autonomy, space, AI and AI safety, biosecurity and WMD policy,
+      defense acquisition and the industrial base. Concentrate on the next
+      three weeks; for major conferences, look up to four months out. Skip
+      events hosted by these organizations, which are already covered:
+      {covered}.
+
 # Congressional committee meetings (Congress.gov API). A meeting is kept when
 # any of its committee names contains one of these strings.
 hill_committees:

@@ -19,7 +19,8 @@ from . import digest, fetch, gov, llm, store
 
 ROOT = Path(__file__).resolve().parent.parent
 ET = ZoneInfo("America/New_York")
-PAGE_GROUPS = ["think_tanks_defense", "think_tanks_tech_policy", "other_orgs", "networking"]
+PAGE_GROUPS = ["think_tanks_defense", "think_tanks_tech_policy", "other_orgs", "networking",
+               "universities", "military", "general_search"]
 TRAVEL_TYPES = ("conference", "industry_day")
 
 
@@ -28,7 +29,10 @@ def scrape_group(sources, today, until, fetch_only, networking=False):
     events, failures = [], []
     for src in sources:
         try:
-            text = fetch.source_text(src)
+            if fetch_only and src.get("fetch") == "search":
+                print(f"  {src['name']}: search agent (needs ANTHROPIC_API_KEY; skipped)")
+                continue
+            text = fetch.source_text(src, today, until)
             if fetch_only:
                 print(f"  {src['name']}: {len(text):,} chars of text")
                 continue
@@ -136,6 +140,11 @@ def main():
     today = datetime.now(ET).date()
     local_until = today + timedelta(days=profile["lookahead_days"])
     until = today + timedelta(days=profile["travel_lookahead_days"])
+
+    covered = sorted({src["name"] for g in PAGE_GROUPS for src in cfg.get(g, [])
+                      if src.get("fetch") != "search"})
+    for src in cfg.get("general_search", []):
+        src["focus"] = src["focus"].replace("{covered}", ", ".join(covered))
 
     workers = PAGE_GROUPS + ["hill", "industry"]
     if args.only:

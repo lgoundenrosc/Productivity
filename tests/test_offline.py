@@ -126,3 +126,30 @@ def test_networking_is_dc_or_online():
     assert main.place(online, today, until, b) and online["score"] == 5
     assert not main.place(ev(event_type="networking", dc_area=False), today, until, b)
     assert not main.place(ev(worker="networking", event_type="industry_day", dc_area=False), today, until, b)
+
+
+def test_localist_keyword_filter(monkeypatch):
+    from tracker import fetch
+    page = {"events": [
+        {"event": {"title": "Defense-Tech Innovation Exchange", "description_text": "", "location_name": "National Landing",
+                   "experience": "inperson", "localist_url": "https://cal/x",
+                   "event_instances": [{"event_instance": {"start": "2026-10-22T17:00:00-04:00"}}]}},
+        {"event": {"title": "Men's Soccer", "description_text": "", "localist_url": "https://cal/y",
+                   "event_instances": [{"event_instance": {"start": "2026-10-31T14:00:00-04:00"}}]}}],
+        "page": {"total": 1}}
+    resp = mock.Mock(); resp.json.return_value = page
+    monkeypatch.setattr(fetch.requests, "get", lambda *a, **k: resp)
+    out = fetch.localist_text("https://cal", "defen[cs]e|startup", date(2026, 10, 19), date(2026, 11, 9))
+    assert "Innovation Exchange" in out and "Soccer" not in out
+
+
+def test_search_agent_resumes_after_pause(monkeypatch):
+    from tracker import llm
+    text = mock.Mock(type="text", text="Event A | Oct 22")
+    paused = mock.Mock(stop_reason="pause_turn", content=[])
+    done = mock.Mock(stop_reason="end_turn", content=[text])
+    fake = mock.Mock(); fake.beta.messages.create.side_effect = [paused, done]
+    monkeypatch.setattr(llm, "client", lambda: fake)
+    assert llm.search_text("focus", date(2026, 10, 19), date(2026, 11, 9)) == "Event A | Oct 22"
+    second_call = fake.beta.messages.create.call_args_list[1].kwargs
+    assert second_call["messages"][-1]["role"] == "assistant"

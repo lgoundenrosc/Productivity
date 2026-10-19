@@ -14,7 +14,7 @@ Nothing needs approval at run time.
 
 ## How a run works
 
-Five workers run in parallel, each with its own Claude calls so no single
+Nine workers run in parallel, each with its own Claude calls so no single
 call has to hold every page:
 
 | Worker | Sources | Method |
@@ -23,9 +23,15 @@ call has to hold every page:
 | `think_tanks_tech_policy` | CSET, SCSP, RAND (DC only), Brookings, Carnegie | page text, Claude extracts |
 | `other_orgs` | SpaceNews and DARPA (headless browser), AFCEA, Potomac Officers Club | page text, Claude extracts |
 | `networking` | Defense Tech DC, STATION DC and Luma DC calendars, Silicon Nation newsletter, Meetup and Eventbrite searches | happy hours, meetups and VC/investor events |
+| `universities` | GWU calendar API, plus a search agent for Georgetown, SAIS, the Bush School in DC, GW, GMU, UMD and UVA startup events | API and Claude web search |
+| `military` | Search agent for DIU, CDAO, OSC, AFWERX, SpaceWERX, Army, Navy, Space Force, DTRA and other DoD events | Claude web search |
+| `general_search` | Search agent for anything the named sources miss | Claude web search |
 | `hill` | Congress.gov committee meetings, filtered to the committees in `config/sources.yaml` | API |
 | `industry` | SAM.gov special notices titled "industry day" or "proposers day" | API |
 
+Search agents use Claude's web search and page-fetch tools, then the same
+extraction step as the page scrapers. Networking events aimed at affinity
+groups, student-only and members-only events are filtered out or scored down.
 Each worker then scores its own events. Events seen in an earlier digest are
 recorded in `data/seen.json`, which the workflow commits back, so new ones get
 a NEW tag. Any source that fails is listed at the bottom of the email.
