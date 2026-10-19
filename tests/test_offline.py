@@ -32,11 +32,11 @@ def test_calendar_link_all_day():
 
 
 def test_digest_groups_and_filters():
-    events = [ev(), ev(title="Low", score=3), ev(title="Bio", category="aibio", score=6),
+    events = [ev(date="2026-10-28"), ev(title="Low", score=3), ev(title="Bio", category="aibio", score=6, date="2026-10-29"),
               ev(kind="hearing", title="HASC posture hearing", category="defense", score=7),
               ev(kind="industry_day", title="Army Industry Day", category="defense", score=6)]
     html = digest.build(events, PROFILE, date(2026, 10, 19), [("SpaceNews", "HTTP 403")])
-    assert "Top picks" in html and "AI x bio and WMD risk" in html
+    assert "TOP PICK" in html and "AI x bio and WMD risk" in html
     assert "Congressional hearings" in html and "Army Industry Day" in html
     assert "Low" not in html and "SpaceNews" in html
 
@@ -81,9 +81,48 @@ def test_schedule_guard(monkeypatch):
 
 
 def test_format_badges_and_in_person_first():
-    events = [ev(title="Webinar on drones", format="virtual", date="2026-10-20"),
-              ev(title="Drone panel at CSIS", format="in-person", date="2026-10-25")]
+    events = [ev(title="Webinar on drones", format="virtual", date="2026-10-27"),
+              ev(title="Drone panel at CSIS", format="in-person", date="2026-10-30")]
     html = digest.build(events, PROFILE, date(2026, 10, 19), [])
     section = html.split("Robotics, autonomy and drones")[1]
     assert section.index("Drone panel at CSIS") < section.index("Webinar on drones")
     assert "IN PERSON" in html and "ONLINE ONLY" in html
+
+
+def test_this_week_networking_and_travel_sections():
+    events = [ev(title="CSIS panel tomorrow", date="2026-10-20"),
+              ev(title="Defense Tech DC happy hour", date="2026-10-27", event_type="networking", category="venture"),
+              ev(title="Spark Tank in Chicago", date="2026-11-02", event_type="industry_day", dc_area=False,
+                 location="Chicago, IL"),
+              ev(title="Later DC panel", date="2026-11-05")]
+    html = digest.build(events, PROFILE, date(2026, 10, 19), [])
+    sections = html.split("<h2")
+    find = lambda t: next(i for i, sec in enumerate(sections) if t in sec)
+    assert "This week" in sections[find("CSIS panel tomorrow")]
+    assert "Happy hours" in sections[find("Defense Tech DC happy hour")]
+    assert "Conferences and big events ahead" in sections[find("Spark Tank in Chicago")]
+    assert "Travel:" in html and html.count("CSIS panel tomorrow") == 1
+
+
+def test_place_rules():
+    b = PROFILE["location_bonus"]
+    today, local_until = date(2026, 10, 19), date(2026, 11, 9)
+    dc = ev(score=6)
+    assert main.place(dc, today, local_until, b) and dc["score"] == 8
+    away_talk = ev(dc_area=False, event_type="talk")
+    assert not main.place(away_talk, today, local_until, b)
+    away_conf = ev(dc_area=False, event_type="conference", date="2027-01-15", score=6)
+    assert main.place(away_conf, today, local_until, b) and away_conf["score"] == 6
+    far_talk = ev(date="2026-12-15", event_type="talk")
+    assert not main.place(far_talk, today, local_until, b)
+    webinar = ev(format="virtual", score=6)
+    assert main.place(webinar, today, local_until, b) and webinar["score"] == 5
+
+
+def test_networking_is_dc_or_online():
+    b, today, until = PROFILE["location_bonus"], date(2026, 10, 19), date(2026, 11, 9)
+    assert main.place(ev(event_type="networking", worker="networking"), today, until, b)
+    online = ev(event_type="networking", format="virtual", score=6)
+    assert main.place(online, today, until, b) and online["score"] == 5
+    assert not main.place(ev(event_type="networking", dc_area=False), today, until, b)
+    assert not main.place(ev(worker="networking", event_type="industry_day", dc_area=False), today, until, b)

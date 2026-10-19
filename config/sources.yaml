@@ -26,6 +26,17 @@ other_orgs:
   - {id: poc,       name: Potomac Officers Club,        url: "https://www.potomacofficersclub.com/upcoming-events/"}
   - {id: darpa,     name: DARPA,                        url: "https://www.darpa.mil/events", fetch: browser}
 
+# Happy hours, meetups and founder/investor networking. This worker's
+# events get their own section in the digest.
+networking:
+  - {id: dtdc,      name: Defense Tech DC (Luma),       url: "https://luma.com/defense-tech-dc", fetch: luma}
+  - {id: station,   name: STATION DC (Luma),            url: "https://luma.com/stationdc", fetch: luma}
+  - {id: luma_dc,   name: Luma DC,                      url: "https://luma.com/dc", fetch: luma}
+  - {id: diie,      name: Silicon Nation newsletter,    url: "https://diie.substack.com/feed", fetch: rss}
+  - {id: meetup,    name: Meetup (defense tech),        url: "https://www.meetup.com/find/?keywords=defense%20tech&location=us--dc--Washington", fetch: browser}
+  - {id: eb_def,    name: Eventbrite (defense tech),    url: "https://www.eventbrite.com/d/dc--washington/defense-tech/"}
+  - {id: eb_nat,    name: Eventbrite (national security), url: "https://www.eventbrite.com/d/dc--washington/national-security/"}
+
 # Congressional committee meetings (Congress.gov API). A meeting is kept when
 # any of its committee names contains one of these strings.
 hill_committees:

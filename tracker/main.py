@@ -19,20 +19,21 @@ from . import digest, fetch, gov, llm, store
 
 ROOT = Path(__file__).resolve().parent.parent
 ET = ZoneInfo("America/New_York")
-PAGE_GROUPS = ["think_tanks_defense", "think_tanks_tech_policy", "other_orgs"]
+PAGE_GROUPS = ["think_tanks_defense", "think_tanks_tech_policy", "other_orgs", "networking"]
+TRAVEL_TYPES = ("conference", "industry_day")
 
 
-def scrape_group(sources, today, until, fetch_only):
+def scrape_group(sources, today, until, fetch_only, networking=False):
     """One worker: each page gets its own extraction call."""
     events, failures = [], []
     for src in sources:
         try:
-            html = fetch.get_html(src["url"], browser=src.get("fetch") == "browser")
-            text = fetch.page_text(html, src["url"])
+            text = fetch.source_text(src)
             if fetch_only:
                 print(f"  {src['name']}: {len(text):,} chars of text")
                 continue
-            found = llm.extract_events(src["name"], text, today, until, src.get("dc_only", False))
+            found = llm.extract_events(src["name"], text, today, until,
+                                       src.get("dc_only", False), networking)
             if not found:
                 failures.append((src["name"], "page loaded but no upcoming events were found"))
             for e in found:
@@ -48,7 +49,7 @@ def gov_worker(kind, cfg, today, until, fetch_only):
         if kind == "hill":
             if not os.environ.get("CONGRESS_API_KEY"):
                 return [], [("Congress.gov", "CONGRESS_API_KEY not set")]
-            evs = gov.hearings(today, until, cfg["hill_committees"])
+            evs = gov.hearings(today, today + timedelta(days=21), cfg["hill_committees"])
         else:
             if not os.environ.get("SAM_API_KEY"):
                 return [], [("SAM.gov", "SAM_API_KEY not set")]
@@ -64,7 +65,8 @@ def gov_worker(kind, cfg, today, until, fetch_only):
 
 def run_worker(name, cfg, profile, today, until, fetch_only):
     if name in PAGE_GROUPS:
-        events, failures = scrape_group(cfg[name], today, until, fetch_only)
+        events, failures = scrape_group(cfg[name], today, until, fetch_only,
+                                        networking=name == "networking")
     else:
         events, failures = gov_worker(name, cfg, today, until, fetch_only)
     if events and not fetch_only:
@@ -73,6 +75,34 @@ def run_worker(name, cfg, profile, today, until, fetch_only):
         except Exception as exc:
             failures.append((f"Scoring ({name})", f"{type(exc).__name__}: {exc}"[:200]))
     return events, failures
+
+
+def place(e, today, local_until, bonus):
+    """Applies the DC bonus and decides whether an event stays in the digest.
+    Local events are kept for three weeks; conferences and industry days, and
+    anything outside DC, only if they are worth planning or traveling for."""
+    if e["kind"] != "event":
+        return True
+    fmt, dc = e.get("format", "unknown"), e.get("dc_area", True)
+    if e.get("worker") == "networking" or e.get("event_type") == "networking":
+        if not dc and fmt != "virtual":
+            return False  # an out-of-town happy hour; online ones stay, ranked lower
+    travel_type = e.get("event_type") in TRAVEL_TYPES and e.get("worker") != "networking"
+    if not dc and fmt != "virtual" and not travel_type:
+        return False  # an out-of-town talk or happy hour
+    if date.fromisoformat(e["date"]) > local_until and not travel_type:
+        return False
+    if fmt == "virtual":
+        delta = bonus.get("online_only", 0)
+    elif dc and fmt == "in-person":
+        delta = bonus.get("dc_in_person", 0)
+    elif dc and fmt == "hybrid":
+        delta = bonus.get("dc_hybrid", 0)
+    else:
+        delta = 0
+    if "score" in e:
+        e["score"] = max(1, min(10, e["score"] + delta))
+    return True
 
 
 def intended_slot_ok():
@@ -104,7 +134,8 @@ def main():
     cfg = yaml.safe_load((ROOT / "config/sources.yaml").read_text())
     profile = yaml.safe_load((ROOT / "config/profile.yaml").read_text())
     today = datetime.now(ET).date()
-    until = today + timedelta(days=profile["lookahead_days"])
+    local_until = today + timedelta(days=profile["lookahead_days"])
+    until = today + timedelta(days=profile["travel_lookahead_days"])
 
     workers = PAGE_GROUPS + ["hill", "industry"]
     if args.only:
@@ -120,9 +151,10 @@ def main():
 
     seen = store.load()
     events, failures, ids = [], [], set()
-    for evs, fails in results:
+    for (evs, fails), worker in zip(results, workers):
         failures += fails
         for e in evs:
+            e["worker"] = worker
             eid = store.event_id(e)
             if eid in ids:
                 continue  # co-hosted event listed by two sources
@@ -130,14 +162,8 @@ def main():
             e["is_new"] = eid not in seen
             events.append(e)
 
-    bonus = profile.get("format_bonus", {})
-    for e in events:
-        if "score" in e:
-            fmt = e.get("format", "unknown")
-            # An in-person event in Chicago is not one you can walk to.
-            if fmt == "in-person" and e.get("dc_area") is False:
-                fmt = "unknown"
-            e["score"] = max(1, min(10, e["score"] + bonus.get(fmt, 0)))
+    bonus = profile.get("location_bonus", {})
+    events = [e for e in events if place(e, today, local_until, bonus)]
 
     body = digest.build(events, profile, today, failures)
     if args.dry_run:

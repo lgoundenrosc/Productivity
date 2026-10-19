@@ -21,7 +21,8 @@ call has to hold every page:
 |---|---|---|
 | `think_tanks_defense` | CSIS, CNAS, Hudson, Atlantic Council, AEI, Mitchell, Reagan Institute | page text, Claude extracts |
 | `think_tanks_tech_policy` | CSET, SCSP, RAND (DC only), Brookings, Carnegie | page text, Claude extracts |
-| `other_orgs` | SpaceNews (headless browser), AFCEA, Potomac Officers Club, DARPA | page text, Claude extracts |
+| `other_orgs` | SpaceNews and DARPA (headless browser), AFCEA, Potomac Officers Club | page text, Claude extracts |
+| `networking` | Defense Tech DC, STATION DC and Luma DC calendars, Silicon Nation newsletter, Meetup and Eventbrite searches | happy hours, meetups and VC/investor events |
 | `hill` | Congress.gov committee meetings, filtered to the committees in `config/sources.yaml` | API |
 | `industry` | SAM.gov special notices titled "industry day" or "proposers day" | API |
 
@@ -65,4 +66,4 @@ To trigger a real send from GitHub: Actions > Weekly DC events digest > Run work
   the in-person bonus (`format_bonus`), the score cutoff and how far ahead to look.
 - `config/sources.yaml`: sources, worker groups, the committee filter and the
   SAM.gov phrases.
-- `TRACKER_MODEL` env var: the Claude model (default `claude-opus-5-5`).
+- `TRACKER_MODEL` env var: the Claude model (default `claude-sonnet-5-5`).

@@ -16,8 +16,11 @@ interests: >
 boost: >
   Speakers from DIU, CDAO, DARPA, OSC, service acquisition executives, HASC
   or SASC members and staff, defense tech founders and venture investors.
-  In-person DC-area events, above all ones with networking or receptions.
-  In-person events take priority over online ones.
+  In-person events in the DC area, above all ones with networking or
+  receptions. Happy hours and meetups where defense tech founders, investors
+  and government buyers gather. General DC venture capital and startup
+  investor events, which are good for networking even without a defense angle. Events outside DC only when they are major
+  conferences worth traveling for.
 
 penalize: >
   Regional diplomacy with no technology angle, domestic social policy, book
@@ -36,11 +39,14 @@ categories:
   - {id: china,     name: "China and tech competition"}
   - {id: other,     name: "Other national security"}
 
-# Added to Claude's score by format, so in-person events rank first and
-# online-only ones need a stronger topic to make the cut. The in-person bonus
-# applies only to events in the DC area.
-format_bonus: {in-person: 1, hybrid: 0, virtual: -1, unknown: 0}
+# Added to Claude's score so DC-area events you can walk into rank first.
+# Online-only events need a stronger topic to make the cut.
+location_bonus:
+  dc_in_person: 2
+  dc_hybrid: 1
+  online_only: -1
 
 min_score: 5        # events below this are dropped from the digest
-top_pick_score: 8   # events at or above this also appear under "Top picks"
-lookahead_days: 42
+top_pick_score: 8   # events at or above this get a TOP PICK badge
+lookahead_days: 21          # talks, happy hours and other local events
+travel_lookahead_days: 120  # conferences and industry days, which need planning or travel

@@ -19,12 +19,7 @@ def calendar_link(ev):
         dates = f"{start:%Y%m%dT%H%M%S}/{end:%Y%m%dT%H%M%S}"
     else:
         dates = f"{d:%Y%m%d}/{d + timedelta(days=1):%Y%m%d}"
-    details = "\n".join(filter(None, [
-        ev.get("summary", ""),
-        "Speakers: " + ", ".join(ev["speakers"]) if ev.get("speakers") else "",
-        ev.get("url", ""),
-        f"Found by the DC events tracker ({ev['source']})",
-    ]))
+    details = "\n".join(filter(None, [ev.get("url", ""), f"Via {ev['source']}"]))
     return "https://calendar.google.com/calendar/render?" + urlencode({
         "action": "TEMPLATE", "text": ev["title"], "dates": dates,
         "ctz": "America/New_York", "details": details,
@@ -53,10 +48,18 @@ def _badge(fmt):
 
 
 def _card(ev, show_calendar=True):
-    new = ' <span style="background:#e6f4ea;color:#137333;font-size:11px;padding:1px 6px;border-radius:8px">NEW</span>' if ev.get("is_new") else ""
+    pill = '<span style="background:{};color:{};font-size:11px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:6px">{}</span>'
+    new = "".join([
+        pill.format("#fce8e6", "#a50e0e", "THIS WEEK") if ev.get("this_week") else "",
+        pill.format("#fff4e5", "#7a4f01", "TOP PICK") if ev.get("top_pick") else "",
+        pill.format("#e6f4ea", "#137333", "NEW") if ev.get("is_new") else "",
+    ])
     title = f'<a href="{e_(ev["url"])}" style="color:#1a3d6d;text-decoration:none">{e_(ev["title"])}</a>' if ev.get("url") else e_(ev["title"])
     badge = _badge(ev.get("format") or "unknown") if ev["kind"] != "industry_day" else ""
-    meta = badge + " · ".join(filter(None, [_when(ev), e_(ev["source"]), e_(ev.get("location", ""))]))
+    where = e_(ev.get("location", "")) or ("Washington area" if ev.get("dc_area") else "")
+    if ev.get("dc_area") is False and ev.get("format") != "virtual":
+        where = f"<b>Travel:</b> {where}"
+    meta = badge + " · ".join(filter(None, [_when(ev), e_(ev["source"]), where]))
     speakers = f'<div style="color:#555;font-size:13px">Speakers: {e_(", ".join(ev["speakers"][:6]))}</div>' if ev.get("speakers") else ""
     cal = f' &nbsp;<a href="{e_(calendar_link(ev))}" style="font-size:12px">Add to calendar</a>' if show_calendar else ""
     return f"""<div style="margin:0 0 14px 0">
@@ -73,25 +76,48 @@ def _section(name, cards):
 
 
 def build(events, profile, today, failures):
-    by_date = lambda e: (e["date"], e.get("start_time", ""))
-    # Within a section, in-person events come first, then by date.
-    in_person_first = lambda e: (FORMAT_ORDER.get(e.get("format"), 2), e["date"], e.get("start_time", ""))
+    """Each event appears once, in the first section that claims it:
+    this week, happy hours and networking, a topic, or big events ahead."""
+    week_end = today + timedelta(days=6)
+    local_until = today + timedelta(days=profile["lookahead_days"])
+    top = profile["top_pick_score"]
     keep = [e for e in events if e.get("score", 0) >= profile["min_score"]]
+    for e in keep:
+        e["this_week"] = date.fromisoformat(e["date"]) <= week_end
+        e["top_pick"] = e.get("score", 0) >= top
+
+    by_date = lambda e: (e["date"], e.get("start_time", ""))
+    in_person_first = lambda e: (FORMAT_ORDER.get(e.get("format"), 2), e["date"], e.get("start_time", ""))
     regular = [e for e in keep if e["kind"] == "event"]
     hearings = sorted((e for e in keep if e["kind"] == "hearing"), key=by_date)
     notices = sorted((e for e in keep if e["kind"] == "industry_day"), key=lambda e: -e["score"])
 
-    parts = [f'<div style="font-family:Georgia,serif;max-width:680px;color:#111">',
+    def is_travel(e):
+        return e.get("event_type") in ("conference", "industry_day") and (
+            not e.get("dc_area", True) or date.fromisoformat(e["date"]) > local_until)
+
+    travel = sorted((e for e in regular if is_travel(e)), key=by_date)
+    rest = [e for e in regular if not is_travel(e)]
+    this_week = sorted((e for e in rest if e["this_week"]), key=by_date)
+    rest = [e for e in rest if not e["this_week"]]
+    networking = sorted((e for e in rest if e.get("event_type") == "networking"
+                         or e.get("worker") == "networking"), key=by_date)
+    rest = [e for e in rest if e not in networking]
+
+    parts = ['<div style="font-family:Georgia,serif;max-width:680px;color:#111">',
              f'<h1 style="font-size:22px">DC events: week of {today:%B} {today.day}</h1>',
-             f'<p style="color:#555;font-size:13px">{len(regular)} events, {len(hearings)} hearings and '
-             f'{len(notices)} industry-day notices scored {profile["min_score"]}+ out of {len(events)} found. '
-             'In-person events are listed first in each section. NEW marks events not in an earlier digest.</p>']
-    top = sorted((e for e in regular if e["score"] >= profile["top_pick_score"]),
-                 key=lambda e: (-e["score"], FORMAT_ORDER.get(e.get("format"), 2), e["date"]))[:6]
-    parts.append(_section("Top picks", [_card(e) for e in top]))
+             f'<p style="color:#555;font-size:13px">{len(this_week)} events this week, '
+             f'{len(networking)} happy hours and meetups, {len(rest)} more over the next three weeks '
+             f'and {len(travel)} bigger events further out. DC events you can attend in person rank '
+             'first. NEW marks events not in an earlier digest.</p>']
+    parts.append(_section(f"This week ({today:%b} {today.day} to {week_end:%b} {week_end.day})",
+                          [_card(e) for e in this_week]))
+    parts.append(_section("Happy hours, meetups and networking", [_card(e) for e in networking]))
     for cat in profile["categories"]:
-        evs = sorted((e for e in regular if e.get("category") == cat["id"]), key=in_person_first)
+        evs = sorted((e for e in rest if e.get("category") == cat["id"]), key=in_person_first)
         parts.append(_section(cat["name"], [_card(e) for e in evs]))
+    parts.append(_section("Conferences and big events ahead (worth planning or traveling for)",
+                          [_card(e) for e in travel]))
     parts.append(_section("Congressional hearings", [_card(e) for e in hearings]))
     parts.append(_section("Industry days and proposers days (SAM.gov, posted in the last two weeks)",
                           [_card(e, show_calendar=False) for e in notices]))

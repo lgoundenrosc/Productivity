@@ -4,7 +4,7 @@ import os
 
 import anthropic
 
-MODEL = os.environ.get("TRACKER_MODEL", "claude-opus-5-5")
+MODEL = os.environ.get("TRACKER_MODEL", "claude-sonnet-5-5")
 _client = None
 
 
@@ -48,15 +48,32 @@ EVENT_SCHEMA = _obj({"events": {"type": "array", "items": _obj({
     "location": S,
     "format": {"type": "string", "enum": ["in-person", "virtual", "hybrid", "unknown"]},
     "dc_area": {"type": "boolean", "description": "Held in DC, Northern Virginia or suburban Maryland"},
+    "event_type": {"type": "string", "enum": [
+        "talk", "conference", "networking", "industry_day", "webinar", "other"],
+        "description": "talk = panel, fireside or book talk; conference = multi-session or "
+                       "multi-day summit, expo or symposium; networking = happy hour, "
+                       "reception, meetup or social; industry_day = proposers day, "
+                       "industry day or pitch day; webinar = online-only talk"},
     "speakers": {"type": "array", "items": S},
     "summary": {"type": "string", "description": "One or two sentences"},
     "url": S,
 })}})
 
 
-def extract_events(source_name, text, today, until, dc_only=False):
+NETWORKING_NOTE = (
+    "This source is checked for networking. Keep happy hours, receptions, meetups, "
+    "founder and investor gatherings, demo days and pitch nights, above all ones "
+    "touching defense, national security, government tech, deep tech, space, "
+    "robotics, AI or venture. General DC venture capital, startup and investor "
+    "events count even with no defense angle. Drop purely social events (parties, fitness, dating, "
+    "hobbies) and events with no professional angle. ")
+
+
+def extract_events(source_name, text, today, until, dc_only=False, networking=False):
     where = ("Keep only events held in the Washington, DC area or online; "
              "drop events in other cities. " if dc_only else "")
+    if networking:
+        where += NETWORKING_NOTE
     prompt = f"""Below is the text of the events page of {source_name}, captured on {today}.
 Links appear inline as `label <url>`.
 
@@ -86,7 +103,8 @@ def score_events(events, profile):
         batch = events[start:start + 40]
         listing = "\n\n".join(
             f"[{i}] {e['source']} | {e['date']} {e.get('start_time', '')} | "
-            f"{e.get('format', '')} | {e.get('location', '')}\n{e['title']}\n"
+            f"{e.get('format', '')} | {e.get('event_type', '')} | "
+            f"{'DC area' if e.get('dc_area') else 'outside DC'} | {e.get('location', '')}\n{e['title']}\n"
             f"Speakers: {', '.join(e.get('speakers') or []) or 'not listed'}\n"
             f"{e.get('summary', '')}"
             for i, e in enumerate(batch))
@@ -100,7 +118,11 @@ Score lower for: {profile['penalize']}
 For each event give one category from this list:
 {cat_lines}
 
-and a score from 1 (skip) to 10 (must attend) for this reader, with a one-sentence
+and a score from 1 (skip) to 10 (must attend) for this reader. The reader lives in
+Washington: rate an event outside the DC area highly only if it is a major conference
+or industry event worth traveling for. Happy hours and receptions where defense tech
+founders, investors or government buyers gather are valuable even without a program.
+Give the score, with a one-sentence
 reason naming the specific draw (a speaker, a topic, a buyer in the room).
 Return one entry per event, using its [idx].
 

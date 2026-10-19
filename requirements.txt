@@ -3,3 +3,4 @@ beautifulsoup4>=4.12
 playwright>=1.48
 PyYAML>=6.0
 requests>=2.32
+lxml>=5.0
