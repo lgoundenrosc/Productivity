@@ -87,7 +87,7 @@ def place(e, today, local_until, bonus):
     if e.get("worker") == "networking" or e.get("event_type") == "networking":
         if not dc and fmt != "virtual":
             return False  # an out-of-town happy hour; online ones stay, ranked lower
-    travel_type = e.get("event_type") in TRAVEL_TYPES and e.get("worker") != "networking"
+    travel_type = e.get("event_type") in TRAVEL_TYPES
     if not dc and fmt != "virtual" and not travel_type:
         return False  # an out-of-town talk or happy hour
     if date.fromisoformat(e["date"]) > local_until and not travel_type:
