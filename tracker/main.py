@@ -140,6 +140,15 @@ def main():
         print("Not the 7am ET slot this week (daylight saving offset); exiting.")
         return 0
 
+    needed = [] if args.fetch_only else ["ANTHROPIC_API_KEY"]
+    if not (args.fetch_only or args.dry_run):
+        needed += ["GMAIL_ADDRESS", "GMAIL_APP_PASSWORD"]
+    missing = [k for k in needed if not os.environ.get(k)]
+    if missing:
+        print(f"Missing {', '.join(missing)}. Add them as repository secrets "
+              "(Settings > Secrets and variables > Actions); see the README.")
+        return 1
+
     cfg = yaml.safe_load((ROOT / "config" / args.city / "sources.yaml").read_text())
     profile = yaml.safe_load((ROOT / "config" / args.city / "profile.yaml").read_text())
     city = profile["city"]
