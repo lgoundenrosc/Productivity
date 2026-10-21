@@ -126,6 +126,17 @@ def intended_slot_ok():
     return slot.astimezone(ET).hour == 6
 
 
+def send_week(profile, today):
+    """True when a scheduled run should send. A profile can set
+    send_every_weeks (default 1) and first_send, a Monday that anchors the
+    cycle, so a fortnightly digest skips every other Monday."""
+    every = profile.get("send_every_weeks", 1)
+    if every <= 1:
+        return True
+    first = date.fromisoformat(str(profile["first_send"]))
+    return (today - first).days // 7 % every == 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="write out/digest.html instead of emailing")
@@ -152,6 +163,9 @@ def main():
     cfg = yaml.safe_load((ROOT / "config" / args.city / "sources.yaml").read_text())
     profile = yaml.safe_load((ROOT / "config" / args.city / "profile.yaml").read_text())
     city = profile["city"]
+    if os.environ.get("GITHUB_EVENT_SCHEDULE") and not send_week(profile, datetime.now(ET).date()):
+        print(f"{city['name']} digest goes out every {profile['send_every_weeks']} weeks; not this week.")
+        return 0
     today = datetime.now(ET).date()
     local_until = today + timedelta(days=profile["lookahead_days"])
     until = today + timedelta(days=profile["travel_lookahead_days"])

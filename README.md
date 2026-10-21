@@ -111,4 +111,5 @@ To trigger a real send from GitHub: Actions > Weekly DC events digest > Run work
   the in-person bonus (`format_bonus`), the score cutoff and how far ahead to look.
 - `config/<city>/sources.yaml`: the worker list, sources, the committee filter and the
   SAM.gov phrases.
+- `send_every_weeks` and `first_send` in a profile: send every N weeks (Boston: every other Monday from Nov 2, 2026).
 - `TRACKER_MODEL` env var: the Claude model (default `claude-sonnet-5-5`).

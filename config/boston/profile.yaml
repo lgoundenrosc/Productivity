@@ -84,6 +84,11 @@ location_bonus:
   local_hybrid: 1
   online_only: -2
 
+# Sent every other Monday, counting from first_send. Hand-run digests
+# (workflow_dispatch or the command line) always send.
+send_every_weeks: 2
+first_send: 2026-11-02
+
 min_score: 5        # events below this are dropped from the digest
 top_pick_score: 8   # events at or above this get a TOP PICK badge
 lookahead_days: 21          # talks, receptions and other local events

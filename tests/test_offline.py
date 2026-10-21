@@ -192,3 +192,10 @@ def test_this_week_ends_on_sunday():
     this_week = html.split("<h2")[1]
     assert "Oct 22 to Oct 25" in this_week
     assert "Saturday demo day" in this_week and "Monday summit" not in this_week
+
+
+def test_boston_sends_every_other_monday():
+    assert main.send_week(BOSTON, date(2026, 11, 2))
+    assert not main.send_week(BOSTON, date(2026, 11, 9))
+    assert main.send_week(BOSTON, date(2026, 11, 16))
+    assert main.send_week(PROFILE, date(2026, 11, 9))  # DC stays weekly
