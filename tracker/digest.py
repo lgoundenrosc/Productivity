@@ -121,7 +121,7 @@ def build(events, profile, today, failures):
 
     parts = ['<div style="font-family:Georgia,serif;font-size:16px;max-width:680px;color:#111">',
              f'<h1 style="font-size:24px">{e_(city["name"])} events: week of {today:%B} {today.day}</h1>',
-             f'<p style="color:#555;font-size:15px">{len(this_week)} events this week, '
+             f'<p style="color:#555;font-size:15px">{len(this_week)} event{"" if len(this_week) == 1 else "s"} this week, '
              f'{happy_hours}{len(rest)} more over the next three weeks '
              f'and {len(travel)} bigger events further out. {e_(city["name"])} events you can attend '
              'in person rank first. NEW marks events not in an earlier digest.</p>']
