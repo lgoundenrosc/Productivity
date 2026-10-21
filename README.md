@@ -8,7 +8,7 @@ digest is under [Boston](#boston) below.
 Every Monday at about 7am ET this emails a digest of upcoming DC events worth
 attending: think tank panels, defense and space industry events, congressional
 hearings, and federal industry days. Claude reads each events page, pulls out
-the events, scores each one against `config/profile.yaml`, and groups them by
+the events, scores each one against `config/dc/profile.yaml`, and groups them by
 topic. Every event is labeled IN PERSON, HYBRID, ONLINE ONLY or FORMAT NOT
 LISTED. In-person events get a one-point score bonus and are listed first in
 each section; online-only events lose a point. Each event has an "Add to calendar" link that opens it prefilled in
@@ -31,7 +31,7 @@ call has to hold every page:
 | `universities` | GWU calendar API, plus a search agent for Georgetown, SAIS, the Bush School in DC, GW, GMU, UMD and UVA startup events | API and Claude web search |
 | `military` | Search agent for DIU, CDAO, OSC, AFWERX, SpaceWERX, Army, Navy, Space Force, DTRA and other DoD events | Claude web search |
 | `general_search` | Search agent for anything the named sources miss | Claude web search |
-| `hill` | Congress.gov committee meetings, filtered to the committees in `config/sources.yaml` | API |
+| `hill` | Congress.gov committee meetings, filtered to the committees in `config/dc/sources.yaml` | API |
 | `industry` | SAM.gov special notices titled "industry day" or "proposers day" | API |
 
 Search agents use Claude's web search and page-fetch tools, then the same
