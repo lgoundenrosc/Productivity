@@ -184,3 +184,11 @@ def test_same_day_events_sort_by_clock_time():
     events = [ev(title="Evening dinner", start_time="6:00 PM ET"), ev(title="Morning summit", start_time="8:30 AM ET")]
     html = digest.build(events, PROFILE, date(2026, 10, 19), [])
     assert html.index("Morning summit") < html.index("Evening dinner")
+
+
+def test_this_week_ends_on_sunday():
+    events = [ev(title="Saturday demo day", date="2026-10-24"), ev(title="Monday summit", date="2026-10-26")]
+    html = digest.build(events, BOSTON, date(2026, 10, 22), [])  # a Thursday
+    this_week = html.split("<h2")[1]
+    assert "Oct 22 to Oct 25" in this_week
+    assert "Saturday demo day" in this_week and "Monday summit" not in this_week

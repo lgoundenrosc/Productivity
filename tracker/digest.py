@@ -90,7 +90,7 @@ def build(events, profile, today, failures):
     section off), a topic, or big events ahead."""
     city = profile["city"]
     card = lambda e, **kw: _card(e, city["local_label"], **kw)
-    week_end = today + timedelta(days=6)
+    week_end = today + timedelta(days=6 - today.weekday())  # through Sunday; next week starts Monday
     local_until = today + timedelta(days=profile["lookahead_days"])
     top = profile["top_pick_score"]
     keep = [e for e in events if e.get("score", 0) >= profile["min_score"]]

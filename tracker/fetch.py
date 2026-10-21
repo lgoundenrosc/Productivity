@@ -68,15 +68,21 @@ def source_text(src, today=None, until=None, area="", recent_days=30):
     if kind == "localist":
         return localist_text(src["url"], src.get("keywords", ""), today, until)
     if kind == "luma":
-        return luma_text(src["url"])
+        return luma_text(src["url"], until)
     if kind == "rss":
         return rss_text(src["url"], recent_days)
     return page_text(get_html(src["url"], browser=kind == "browser"), src["url"])
 
 
-def luma_text(url):
+LUMA_DISCOVER = "https://api.lu.ma/discover/get-paginated-events"
+LUMA_CALENDAR = "https://api.lu.ma/calendar/get-items"
+
+
+def luma_text(url, until=None):
     """Luma renders dates client-side, so read the event data embedded in
-    the page instead of its visible text."""
+    the page instead of its visible text. City and calendar pages embed only
+    their first 20 or so events, so the rest come from Luma's API, up to
+    `until`."""
     import json
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -84,6 +90,7 @@ def luma_text(url):
     m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.S)
     if not m:
         raise RuntimeError("Luma page has no embedded event data")
+    data = json.loads(m.group(1))
     lines, seen = [], set()
 
     def walk(o):
@@ -107,8 +114,33 @@ def luma_text(url):
             for v in o:
                 walk(v)
 
-    walk(json.loads(m.group(1)))
+    init = data.get("props", {}).get("pageProps", {}).get("initialData") or data
+    walk(init)
+    kind, info = init.get("kind"), init.get("data") or {}
+    if until and kind == "discover-place":
+        walk(_luma_pages(LUMA_DISCOVER, {"discover_place_api_id": info["place"]["api_id"]}, until))
+    elif until and kind == "calendar":
+        walk(_luma_pages(LUMA_CALENDAR, {"calendar_api_id": info["calendar"]["api_id"],
+                                         "period": "future"}, until))
     return "\n".join(lines)
+
+
+def _luma_pages(endpoint, base_params, until, max_pages=10):
+    """Every event from a paginated Luma listing up to `until`, as raw entries."""
+    entries, cursor = [], None
+    for _ in range(max_pages):
+        params = {**base_params, "pagination_limit": 50}
+        if cursor:
+            params["pagination_cursor"] = cursor
+        r = requests.get(endpoint, params=params, headers={"User-Agent": UA}, timeout=30)
+        r.raise_for_status()
+        page = r.json()
+        entries += page.get("entries", [])
+        last = (page.get("entries") or [{}])[-1].get("event", {}).get("start_at", "")
+        cursor = page.get("next_cursor")
+        if not page.get("has_more") or not cursor or last[:10] > until.isoformat():
+            break
+    return entries
 
 
 def rss_text(url, recent_days):

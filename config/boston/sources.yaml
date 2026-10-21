@@ -137,6 +137,8 @@ startup_hubs:
 
 networking:
   - {id: luma_bos,  name: Luma Boston,                  url: "https://luma.com/boston", fetch: luma}
+  - {id: ttw,       name: Tough Tech Week (Luma),       url: "https://luma.com/toughtechweek", fetch: luma}  # The Engine's week in late October; empty the rest of the year
+  - {id: gtl,       name: Greentown Labs (Luma),        url: "https://luma.com/greentownlabs", fetch: luma}
   - {id: eb_vc,     name: Eventbrite (venture capital), url: "https://www.eventbrite.com/d/ma--boston/venture-capital/"}
   - {id: eb_inv,    name: Eventbrite (investing),       url: "https://www.eventbrite.com/d/ma--boston/investing/"}
   - {id: eb_start,  name: Eventbrite (startups),        url: "https://www.eventbrite.com/d/ma--boston/startups/"}
