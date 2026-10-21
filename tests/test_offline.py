@@ -178,3 +178,9 @@ def test_boston_digest_puts_receptions_under_topics():
     assert "Family office dinner" in lp
     b, today, until = BOSTON["location_bonus"], date(2026, 10, 19), date(2026, 11, 9)
     assert main.place(events[1], today, until, b)  # a speaker call due after three weeks stays
+
+
+def test_same_day_events_sort_by_clock_time():
+    events = [ev(title="Evening dinner", start_time="6:00 PM ET"), ev(title="Morning summit", start_time="8:30 AM ET")]
+    html = digest.build(events, PROFILE, date(2026, 10, 19), [])
+    assert html.index("Morning summit") < html.index("Evening dinner")

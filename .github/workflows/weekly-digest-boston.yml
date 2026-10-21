@@ -7,10 +7,6 @@ on:
     - cron: "50 10 * * 1"
     - cron: "50 11 * * 1"
   workflow_dispatch: {}
-  # Temporary: a push to the build branch emails a test digest.
-  push:
-    branches: [claude/wonderful-mccarthy-yp8lrm]
-    paths: [config/boston/**, .github/workflows/weekly-digest-boston.yml]
 
 permissions:
   contents: write   # to commit data/boston/seen.json
@@ -36,9 +32,8 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_TO: ${{ secrets.BOSTON_DIGEST_TO || secrets.DIGEST_TO }}
-        run: python -m tracker.main --city boston ${{ github.event_name == 'push' && '--test' || '' }}
+        run: python -m tracker.main --city boston
       - name: Save which events were already sent
-        if: github.event_name != 'push'
         run: |
           git config user.name "events-digest-bot"
           git config user.email "events-digest-bot@users.noreply.github.com"

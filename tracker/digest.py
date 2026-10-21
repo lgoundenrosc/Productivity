@@ -27,6 +27,15 @@ def calendar_link(ev):
     })
 
 
+def _minutes(ev):
+    """Start time as minutes after midnight, so 8:30 AM sorts before 6:00 PM.
+    Events with no listed time go first."""
+    m = re.search(r"(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m", ev.get("start_time", ""), re.I)
+    if not m:
+        return -1
+    return (int(m.group(1)) % 12 + (12 if m.group(3).lower() == "p" else 0)) * 60 + int(m.group(2) or 0)
+
+
 def _when(ev):
     d = date.fromisoformat(ev["date"])
     return f"{d:%a %b} {d.day}" + (f", {ev['start_time']}" if ev.get("start_time") else "")
@@ -89,8 +98,8 @@ def build(events, profile, today, failures):
         e["this_week"] = date.fromisoformat(e["date"]) <= week_end
         e["top_pick"] = e.get("score", 0) >= top
 
-    by_date = lambda e: (e["date"], e.get("start_time", ""))
-    in_person_first = lambda e: (FORMAT_ORDER.get(e.get("format"), 2), e["date"], e.get("start_time", ""))
+    by_date = lambda e: (e["date"], _minutes(e))
+    in_person_first = lambda e: (FORMAT_ORDER.get(e.get("format"), 2), e["date"], _minutes(e))
     regular = [e for e in keep if e["kind"] == "event"]
     hearings = sorted((e for e in keep if e["kind"] == "hearing"), key=by_date)
     notices = sorted((e for e in keep if e["kind"] == "industry_day"), key=lambda e: -e["score"])
