@@ -1,0 +1,90 @@
+# The city the digest covers. `area` goes into Claude's prompts.
+city:
+  name: Boston
+  long_name: Boston
+  area: "Greater Boston (Boston, Cambridge, Somerville and the inner suburbs out to Route 128)"
+  local_label: Boston area
+  seen_file: data/boston/seen.json
+
+# Who the digest is for. This text goes to Claude verbatim when scoring.
+reader: >
+  General partner at Rosc, a pre-seed and seed venture fund that is raising
+  its next fund. Attends Boston events for three reasons, in this order: to
+  meet limited partners and get in front of them as a speaker or panelist, to
+  see promising startups before other investors do, and to build co-investor
+  relationships.
+
+interests: >
+  Limited partners of every kind: family offices, endowments and foundations,
+  fund-of-funds, pension funds, RIAs and wealth managers, corporate venture
+  arms and high-net-worth individuals. Emerging manager programs and allocator
+  views on venture. Early-stage startups out of MIT, Harvard and other Boston
+  schools and accelerators, with a lean toward deep tech, defense and dual-use,
+  AI, robotics and hardware. Angel groups and investor networks, including
+  ones built around a community or diaspora.
+
+boost: >
+  Rooms with LPs in them: family office forums, allocator and endowment CIO
+  panels, fund-of-funds and wealth management events, NEVCA events, CFA
+  Society Boston and ACG Boston, and dinners or receptions where LPs and GPs
+  mix. Open calls for speakers, panelists, pitch judges or mentors at events
+  LPs or strong founders attend. Demo days, pitch competitions and accelerator
+  showcases at MIT, Harvard, MassChallenge, MassRobotics, Greentown Labs and
+  similar, above all deep tech, defense, AI and robotics. Investor networks
+  such as the Boston Israel Innovation Group (BIIG), the New England-Israel
+  Business Council, TiE Boston and the angel groups. Small curated events
+  over large ones.
+
+penalize: >
+  Events built for founders buying services or learning basics (how to raise,
+  legal or banking 101, office hours run by vendors). Purely academic talks
+  with no investors or founders in the room. Consumer, ecommerce and
+  therapeutics pitch events with no deep tech angle. Big expos with no
+  investor program. Webinars. Student-only, resident-only and members-only
+  events the reader can't join. Events limited to a gender or racial group,
+  since the digest can't tell whether the reader qualifies. Events outside
+  Greater Boston unless they are major LP, family office or venture
+  conferences worth traveling for.
+
+# Told to Claude when it reads each events page. Unlike DC, investor networks
+# built around a community or diaspora stay in.
+audience_note: >
+  Drop student-only events (admissions, career fairs, class sessions),
+  events open only to residents or members, and purely social events (parties,
+  fitness, hobbies). Keep investor and founder networks built around a
+  nationality, diaspora or community (for example Israeli, Indian or alumni
+  investor groups) when outside investors can attend.
+networking_note: >
+  This source is checked for networking. Keep receptions, dinners, meetups,
+  founder and investor gatherings, demo days and pitch nights, and anything
+  where LPs, family offices or fund managers gather. Drop events with no
+  professional angle.
+scoring_note: >
+  The reader's fund is raising, so an event full of LPs outranks an event full
+  of founders. A chance to speak, sit on a panel or judge a pitch competition
+  is worth more than attending.
+
+# Receptions and meetups go into the topic sections below, so an LP dinner
+# lands under LP access instead of a general networking list.
+networking_section: false
+
+# Digest sections, in display order. Claude assigns each event one category.
+categories:
+  - {id: lp,        name: "LP access: allocators, family offices and fund managers"}
+  - {id: speaking,  name: "Speaking, panel and judging slots"}
+  - {id: dealflow,  name: "Deal flow: demo days, pitch events and founder showcases"}
+  - {id: investors, name: "Angel groups, investor networks and co-investors"}
+  - {id: networking, name: "Receptions and meetups"}
+  - {id: other,     name: "Talks and research worth attending"}
+
+# Added to Claude's score so Boston events you can walk into rank first.
+# LP access depends on being in the room, so online-only events lose more.
+location_bonus:
+  local_in_person: 2
+  local_hybrid: 1
+  online_only: -2
+
+min_score: 5        # events below this are dropped from the digest
+top_pick_score: 8   # events at or above this get a TOP PICK badge
+lookahead_days: 21          # talks, receptions and other local events
+travel_lookahead_days: 120  # conferences and speaker calls, which need planning or travel

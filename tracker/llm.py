@@ -41,45 +41,39 @@ def _obj(props):
 
 
 S = {"type": "string"}
-EVENT_SCHEMA = _obj({"events": {"type": "array", "items": _obj({
-    "title": S,
-    "date": {"type": "string", "description": "YYYY-MM-DD"},
-    "start_time": {"type": "string", "description": "e.g. 10:00 AM ET, or empty"},
-    "location": S,
-    "format": {"type": "string", "enum": ["in-person", "virtual", "hybrid", "unknown"]},
-    "dc_area": {"type": "boolean", "description": "Held in DC, Northern Virginia or suburban Maryland"},
-    "event_type": {"type": "string", "enum": [
-        "talk", "conference", "networking", "industry_day", "webinar", "other"],
-        "description": "talk = panel, fireside or book talk; conference = multi-session or "
-                       "multi-day summit, expo or symposium; networking = happy hour, "
-                       "reception, meetup or social; industry_day = proposers day, "
-                       "industry day or pitch day; webinar = online-only talk"},
-    "speakers": {"type": "array", "items": S},
-    "summary": {"type": "string", "description": "One or two sentences"},
-    "url": S,
-})}})
 
 
-AUDIENCE_NOTE = (
-    "Drop events aimed at a specific demographic or affinity group (for example "
-    "events for a particular race, gender or ethnicity), student-only events such "
-    "as admissions or career fairs, and purely social events. ")
+def event_schema(area):
+    return _obj({"events": {"type": "array", "items": _obj({
+        "title": S,
+        "date": {"type": "string", "description": "YYYY-MM-DD; for a speaking_call, the application deadline"},
+        "start_time": {"type": "string", "description": "e.g. 10:00 AM ET, or empty"},
+        "location": S,
+        "format": {"type": "string", "enum": ["in-person", "virtual", "hybrid", "unknown"]},
+        "local": {"type": "boolean", "description": f"Held in {area}"},
+        "event_type": {"type": "string", "enum": [
+            "talk", "conference", "networking", "industry_day", "pitch_event",
+            "speaking_call", "webinar", "other"],
+            "description": "talk = panel, fireside or book talk; conference = multi-session or "
+                           "multi-day summit, expo or symposium; networking = happy hour, "
+                           "reception, dinner, meetup or social; industry_day = government "
+                           "proposers day, industry day or pitch day; pitch_event = demo day, "
+                           "pitch competition or accelerator showcase; speaking_call = an open "
+                           "call for speakers, panelists, pitch judges or mentors; webinar = "
+                           "online-only talk"},
+        "speakers": {"type": "array", "items": S},
+        "summary": {"type": "string", "description": "One or two sentences"},
+        "url": S,
+    })}})
 
-NETWORKING_NOTE = (
-    "This source is checked for networking. Keep happy hours, receptions, meetups, "
-    "founder and investor gatherings, demo days and pitch nights, above all ones "
-    "touching defense, national security, government tech, deep tech, space, "
-    "robotics, AI or venture. General DC venture capital, startup and investor "
-    "events count even with no defense angle. Drop purely social events (parties, fitness, dating, "
-    "hobbies) and events with no professional angle. ")
 
-
-def extract_events(source_name, text, today, until, dc_only=False, networking=False):
-    where = ("Keep only events held in the Washington, DC area or online; "
-             "drop events in other cities. " if dc_only else "")
-    where += AUDIENCE_NOTE
+def extract_events(source_name, text, today, until, profile, local_only=False, networking=False):
+    area = profile["city"]["area"]
+    where = (f"Keep only events held in {area} or online; "
+             "drop events in other cities. " if local_only else "")
+    where += profile.get("audience_note", "").strip() + " "
     if networking:
-        where += NETWORKING_NOTE
+        where += profile.get("networking_note", "").strip() + " "
     prompt = f"""Below is the text of the events page of {source_name}, captured on {today}.
 Links appear inline as `label <url>`.
 
@@ -92,7 +86,7 @@ for anything the page does not say. Do not invent speakers or details.
 <page>
 {text}
 </page>"""
-    return _json_call(prompt, EVENT_SCHEMA)["events"]
+    return _json_call(prompt, event_schema(area))["events"]
 
 
 SEARCH_TOOLS = [
@@ -101,13 +95,13 @@ SEARCH_TOOLS = [
 ]
 
 
-def search_text(focus, today, until, max_restarts=5):
+def search_text(focus, today, until, area, max_restarts=5):
     """A search agent: Claude searches the web and reads event pages, then
     writes up every event it found as plain text for extract_events().
     Structured output can't be combined with web search citations, so the
     write-up and the extraction are separate calls."""
-    prompt = f"""Today is {today}. Find upcoming events in the Washington, DC area
-(DC, Northern Virginia, suburban Maryland) dated {today} to {until}.
+    prompt = f"""Today is {today}. Find upcoming events in {area}
+dated {today} to {until}.
 
 {focus}
 
@@ -148,16 +142,18 @@ def score_events(events, profile):
         "reason": {"type": "string", "description": "One short sentence"},
     })}})
     cat_lines = "\n".join(f"- {c['id']}: {c['name']}" for c in cats)
+    city = profile["city"]
+    local = city["local_label"]
     for start in range(0, len(events), 40):
         batch = events[start:start + 40]
         listing = "\n\n".join(
             f"[{i}] {e['source']} | {e['date']} {e.get('start_time', '')} | "
             f"{e.get('format', '')} | {e.get('event_type', '')} | "
-            f"{'DC area' if e.get('dc_area') else 'outside DC'} | {e.get('location', '')}\n{e['title']}\n"
+            f"{local if e.get('local') else 'outside ' + local} | {e.get('location', '')}\n{e['title']}\n"
             f"Speakers: {', '.join(e.get('speakers') or []) or 'not listed'}\n"
             f"{e.get('summary', '')}"
             for i, e in enumerate(batch))
-        prompt = f"""You are choosing which Washington events a reader should attend.
+        prompt = f"""You are choosing which {city['long_name']} events a reader should attend.
 
 Reader: {profile['reader']}
 Interests: {profile['interests']}
@@ -168,9 +164,8 @@ For each event give one category from this list:
 {cat_lines}
 
 and a score from 1 (skip) to 10 (must attend) for this reader. The reader lives in
-Washington: rate an event outside the DC area highly only if it is a major conference
-or industry event worth traveling for. Happy hours and receptions where defense tech
-founders, investors or government buyers gather are valuable even without a program.
+{city['long_name']}: rate an event outside {city['area']} highly only if it is a major
+conference or industry event worth traveling for. {profile.get('scoring_note', '').strip()}
 Give the score, with a one-sentence
 reason naming the specific draw (a speaker, a topic, a buyer in the room).
 Return one entry per event, using its [idx].

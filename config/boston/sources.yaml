@@ -1,0 +1,157 @@
+# Boston event sources. `fetch: browser` uses headless Chromium for pages
+# that build their event list with JavaScript. Pages that block automated
+# access (Harvard Innovation Labs, Greentown Labs, TiE Boston, Startup Boston,
+# CFA Society Boston) or don't list dates (BIIG, The Engine, CIC) are covered
+# by the search agents instead.
+
+# Workers run in parallel, each with its own Claude calls. Every name is a
+# group of sources below.
+workers: [lp_finance, investor_networks, speaking, harvard, mit, universities,
+          startup_hubs, networking, general_search]
+networking_workers: [networking]
+
+# Where LPs gather. Rosc is raising, so this group comes first.
+lp_finance:
+  - {id: bostonfed, name: Federal Reserve Bank of Boston, url: "https://www.bostonfed.org/news-and-events/events.aspx", fetch: browser}
+  - id: lp_search
+    name: LP and family office search agent
+    fetch: search
+    focus: >
+      Look for events in Greater Boston where limited partners gather: family
+      office forums and dinners, endowment and foundation investment events,
+      fund-of-funds, pension and RIA or wealth management gatherings, emerging
+      manager programs, and allocator panels on venture capital. Check CFA
+      Society Boston, ACG Boston, the Boston Economic Club, the Greater Boston
+      Chamber of Commerce, NEVCA's family office programs, MassVentures, the
+      Massachusetts PRIM board and investment committee meetings (public, and
+      where the state pension's venture allocations are discussed), and
+      conference organizers that run family office or institutional investor
+      forums in Boston (Opal Group, Markets Group, Institutional Investor and
+      similar). Also note major family office or LP conferences elsewhere in
+      New England or New York in the next four months.
+
+# Angel groups and investor networks, including community-based ones.
+investor_networks:
+  - {id: nevca,     name: NEVCA (Luma),                 url: "https://luma.com/nevca", fetch: luma}
+  - {id: neibc,     name: New England-Israel Business Council, url: "https://neibc.org/events/", fetch: browser}
+  - id: network_search
+    name: Investor network search agent
+    fetch: search
+    focus: >
+      Look for public events from Boston investor networks: the Boston Israel
+      Innovation Group (BIIG, gobiig.org, and the Israeli consulate in New
+      England), TiE Boston and TiEcon East, Cambridge Angels, Launchpad Venture
+      Group, Boston Harbor Angels, Hub Angels, Walnut Venture Associates, Mass
+      Medical Angels, Keiretsu Forum New England, HBS Alumni Angels of Greater
+      Boston and MIT alumni angel groups. Keep pitch meetings open to guest
+      investors, investor receptions, syndicate sessions and co-investment
+      events. Skip member-only screening meetings unless guests can attend.
+
+# Calls for speakers, panelists, judges and mentors. These have deadlines
+# weeks ahead of the event, which page scrapers miss.
+speaking:
+  - id: speaking_search
+    name: Speaker and judge call search agent
+    fetch: search
+    focus: >
+      Look for open calls for speakers, panelists, pitch competition judges and
+      accelerator mentors at Boston-area events that a venture fund GP could
+      answer: MIT $100K and delta v, the HBS New Venture Competition, Harvard
+      Innovation Labs, MassChallenge, Venture Café Cambridge session
+      proposals, Startup Boston Week, MassRobotics, Greentown Labs, NEVCA
+      programs, TiE Boston, university pitch competitions, and family office or
+      LP conferences in the region. For each call give the event, its date, the
+      application deadline and the link. Use the deadline as the date.
+
+harvard:
+  - {id: hks,       name: Harvard Kennedy School,       url: "https://www.hks.harvard.edu/events"}
+  - {id: belfer,    name: Belfer Center,                url: "https://www.belfercenter.org/events"}
+  - {id: gazette,   name: Harvard Gazette events,       url: "https://news.harvard.edu/gazette/harvard-events/"}
+  - id: harvard_search
+    name: Harvard search agent
+    fetch: search
+    focus: >
+      Look for public Harvard events with founders or investors in the room:
+      Harvard Innovation Labs (including Launch Lab X and the Pagliuca Life
+      Lab demo days), HBS (Rock Center for Entrepreneurship, the New Venture
+      Competition, the HBS Venture Capital and Private Equity Conference, HBS
+      Alumni Angels of Greater Boston, the HBS Club of Boston), the Office of
+      Technology Development and Harvard Grid startup showcases, the Wyss
+      Institute, SEAS, the Kempner Institute, Harvard Alumni Entrepreneurs and
+      the Harvard Club of Boston. Keep demo days, pitch competitions, investor
+      panels and receptions, and talks by investors or allocators. Skip
+      class sessions and student-only events.
+
+mit:
+  - {id: mit_entre, name: Martin Trust Center for MIT Entrepreneurship, url: "https://entrepreneurship.mit.edu/events/", fetch: browser}
+  - {id: mit_cal,   name: MIT events calendar,          url: "https://calendar.mit.edu", fetch: localist,
+     keywords: "startup|venture|entrepreneur|founder|investor|pitch|demo day|accelerator|limited partner|family office|endowment|capital|commerciali[sz]|spinout|spin-out|deep tech"}
+  - id: mit_search
+    name: MIT search agent
+    fetch: search
+    focus: >
+      Look for public MIT events with founders or investors in the room: The
+      Engine's public events and demo days, MIT Sloan (the Sloan VC and
+      Private Equity Conference, the Sloan Investment Conference, the Sloan
+      Fintech Conference), the Venture Mentoring Service, the Deshpande Center
+      (IdeaStream), the Industrial Liaison Program and MIT Startup Exchange,
+      CSAIL Alliances, the Media Lab, MIT Enterprise Forum Cambridge, MIT
+      Sandbox and the MIT Energy Conference. Keep demo days, pitch events,
+      investor panels and receptions. Skip class sessions and student-only
+      events.
+
+universities:
+  - {id: neu_cal,   name: Northeastern events calendar, url: "https://calendar.northeastern.edu", fetch: localist,
+     keywords: "startup|venture|entrepreneur|founder|investor|pitch|demo day|accelerator|limited partner|family office|capital|spinout"}
+  - {id: questrom,  name: BU Questrom,                  url: "https://www.bu.edu/questrom/events/"}
+  - id: uni_search
+    name: University search agent
+    fetch: search
+    focus: >
+      Look for public startup and investor events at other Boston-area
+      schools: Northeastern (IDEA venture accelerator, Mosaic), Boston
+      University (BUild Lab, Questrom), Babson (Arthur M. Blank Center, Rocket
+      Pitch, the Babson Entrepreneurship Forum), Tufts (Derby Entrepreneurship
+      Center), Boston College (Shea Center), Brandeis (Spark), WPI and UMass
+      Lowell (M2D2, Innovation Hub). Keep demo days, pitch competitions, investor
+      panels and receptions. Skip class sessions, admissions and student-only
+      events.
+
+startup_hubs:
+  - {id: vcafe,     name: Venture Café Cambridge,       url: "https://venturecafecambridge.org/thursday-gathering/"}
+  - {id: massrobo,  name: MassRobotics,                 url: "https://www.massrobotics.org/events/"}
+  - {id: masstlc,   name: MassTLC,                      url: "https://masstlc.org/events/"}
+  - {id: labcentral, name: LabCentral,                  url: "https://www.labcentral.org/news-events"}
+  - {id: masschal,  name: MassChallenge,                url: "https://masschallenge.org/events/", local_only: true}
+  - id: hub_search
+    name: Startup hub search agent
+    fetch: search
+    focus: >
+      Look for public events at Boston startup hubs: CIC Cambridge and CIC
+      Boston, Greentown Labs, Techstars Boston, The Engine, District Hall,
+      Roxbury Innovation Center, BioLabs, The Capital Network, Startup Boston
+      and Startup Boston Week, Mass Tech Collaborative, the Massachusetts Life
+      Sciences Center, EforAll and Boston Tech Hub. Keep demo days, pitch
+      nights, cohort showcases, investor panels and receptions. Skip workshops
+      teaching founders the basics and events open only to residents.
+
+networking:
+  - {id: luma_bos,  name: Luma Boston,                  url: "https://luma.com/boston", fetch: luma}
+  - {id: eb_vc,     name: Eventbrite (venture capital), url: "https://www.eventbrite.com/d/ma--boston/venture-capital/"}
+  - {id: eb_inv,    name: Eventbrite (investing),       url: "https://www.eventbrite.com/d/ma--boston/investing/"}
+  - {id: eb_start,  name: Eventbrite (startups),        url: "https://www.eventbrite.com/d/ma--boston/startups/"}
+
+# A general sweep for anything the named sources miss.
+general_search:
+  - id: gen_search
+    name: General search agent
+    fetch: search
+    focus: >
+      Look for Greater Boston events a pre-seed and seed venture GP who is
+      raising a fund would want to attend: gatherings of LPs, family offices
+      and fund managers, venture capital receptions and dinners, demo days and
+      pitch events, deep tech, defense, AI and robotics startup events, and
+      Boston Business Journal or BostInno investor events. Concentrate on the
+      next three weeks; for major conferences, look up to four months out.
+      Skip events hosted by these organizations, which are already covered:
+      {covered}.

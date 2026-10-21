@@ -57,14 +57,14 @@ def page_text(html, base_url):
     return re.sub(r"\n{2,}", "\n", text)
 
 
-def source_text(src, today=None, until=None, recent_days=30):
+def source_text(src, today=None, until=None, area="", recent_days=30):
     """Text for one source, by its `fetch` type: http (default), browser,
     luma (a Luma calendar or city page), rss (a newsletter feed), localist
     (a university calendar API) or search (a Claude web search agent)."""
     kind = src.get("fetch", "http")
     if kind == "search":
         from . import llm
-        return llm.search_text(src["focus"], today, until)
+        return llm.search_text(src["focus"], today, until, area)
     if kind == "localist":
         return localist_text(src["url"], src.get("keywords", ""), today, until)
     if kind == "luma":

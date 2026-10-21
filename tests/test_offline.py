@@ -7,7 +7,8 @@ import yaml
 
 from tracker import digest, gov, main, store
 
-PROFILE = yaml.safe_load(open("config/profile.yaml"))
+PROFILE = yaml.safe_load(open("config/dc/profile.yaml"))
+BOSTON = yaml.safe_load(open("config/boston/profile.yaml"))
 
 
 def ev(**kw):
@@ -92,7 +93,7 @@ def test_format_badges_and_in_person_first():
 def test_this_week_networking_and_travel_sections():
     events = [ev(title="CSIS panel tomorrow", date="2026-10-20"),
               ev(title="Defense Tech DC happy hour", date="2026-10-27", event_type="networking", category="venture"),
-              ev(title="Spark Tank in Chicago", date="2026-11-02", event_type="industry_day", dc_area=False,
+              ev(title="Spark Tank in Chicago", date="2026-11-02", event_type="industry_day", local=False,
                  location="Chicago, IL"),
               ev(title="Later DC panel", date="2026-11-05")]
     html = digest.build(events, PROFILE, date(2026, 10, 19), [])
@@ -109,9 +110,9 @@ def test_place_rules():
     today, local_until = date(2026, 10, 19), date(2026, 11, 9)
     dc = ev(score=6)
     assert main.place(dc, today, local_until, b) and dc["score"] == 8
-    away_talk = ev(dc_area=False, event_type="talk")
+    away_talk = ev(local=False, event_type="talk")
     assert not main.place(away_talk, today, local_until, b)
-    away_conf = ev(dc_area=False, event_type="conference", date="2027-01-15", score=6)
+    away_conf = ev(local=False, event_type="conference", date="2027-01-15", score=6)
     assert main.place(away_conf, today, local_until, b) and away_conf["score"] == 6
     far_talk = ev(date="2026-12-15", event_type="talk")
     assert not main.place(far_talk, today, local_until, b)
@@ -121,11 +122,11 @@ def test_place_rules():
 
 def test_networking_is_dc_or_online():
     b, today, until = PROFILE["location_bonus"], date(2026, 10, 19), date(2026, 11, 9)
-    assert main.place(ev(event_type="networking", worker="networking"), today, until, b)
+    assert main.place(ev(event_type="networking", networking_source=True), today, until, b)
     online = ev(event_type="networking", format="virtual", score=6)
     assert main.place(online, today, until, b) and online["score"] == 5
-    assert not main.place(ev(event_type="networking", dc_area=False), today, until, b)
-    assert not main.place(ev(worker="networking", event_type="industry_day", dc_area=False), today, until, b)
+    assert not main.place(ev(event_type="networking", local=False), today, until, b)
+    assert not main.place(ev(networking_source=True, event_type="industry_day", local=False), today, until, b)
 
 
 def test_localist_keyword_filter(monkeypatch):
@@ -150,6 +151,30 @@ def test_search_agent_resumes_after_pause(monkeypatch):
     done = mock.Mock(stop_reason="end_turn", content=[text])
     fake = mock.Mock(); fake.beta.messages.create.side_effect = [paused, done]
     monkeypatch.setattr(llm, "client", lambda: fake)
-    assert llm.search_text("focus", date(2026, 10, 19), date(2026, 11, 9)) == "Event A | Oct 22"
+    assert llm.search_text("focus", date(2026, 10, 19), date(2026, 11, 9), "Greater Boston") == "Event A | Oct 22"
     second_call = fake.beta.messages.create.call_args_list[1].kwargs
     assert second_call["messages"][-1]["role"] == "assistant"
+
+
+def test_city_configs_are_complete():
+    for city in ("dc", "boston"):
+        cfg = yaml.safe_load(open(f"config/{city}/sources.yaml"))
+        profile = yaml.safe_load(open(f"config/{city}/profile.yaml"))
+        assert {"name", "long_name", "area", "local_label", "seen_file"} <= set(profile["city"])
+        for w in cfg["workers"]:
+            assert w in main.GOV_WORKERS or cfg[w], f"{city}: worker {w} has no sources"
+    assert "aibio" not in {c["id"] for c in BOSTON["categories"]}
+    assert BOSTON["categories"][0]["id"] == "lp"
+
+
+def test_boston_digest_puts_receptions_under_topics():
+    events = [ev(title="Family office dinner", date="2026-10-29", event_type="networking", category="lp",
+                 networking_source=True, location="Boston, MA"),
+              ev(title="Judges wanted for MIT $100K", date="2026-12-01", event_type="speaking_call",
+                 category="speaking")]
+    html = digest.build(events, BOSTON, date(2026, 10, 19), [])
+    assert "Boston events: week of" in html and "Happy hours" not in html
+    lp = html.split("LP access")[1]
+    assert "Family office dinner" in lp
+    b, today, until = BOSTON["location_bonus"], date(2026, 10, 19), date(2026, 11, 9)
+    assert main.place(events[1], today, until, b)  # a speaker call due after three weeks stays

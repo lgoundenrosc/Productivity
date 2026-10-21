@@ -47,7 +47,7 @@ def _badge(fmt):
             f'padding:1px 6px;border-radius:8px;margin-right:6px">{label}</span>')
 
 
-def _card(ev, show_calendar=True):
+def _card(ev, local_label="", show_calendar=True):
     pill = '<span style="background:{};color:{};font-size:12px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:6px">{}</span>'
     new = "".join([
         pill.format("#fce8e6", "#a50e0e", "THIS WEEK") if ev.get("this_week") else "",
@@ -56,8 +56,8 @@ def _card(ev, show_calendar=True):
     ])
     title = f'<a href="{e_(ev["url"])}" style="color:#1a3d6d;text-decoration:none">{e_(ev["title"])}</a>' if ev.get("url") else e_(ev["title"])
     badge = _badge(ev.get("format") or "unknown") if ev["kind"] != "industry_day" else ""
-    where = e_(ev.get("location", "")) or ("Washington area" if ev.get("dc_area") else "")
-    if ev.get("dc_area") is False and ev.get("format") != "virtual":
+    where = e_(ev.get("location", "")) or (e_(local_label) if ev.get("local") else "")
+    if ev.get("local") is False and ev.get("format") != "virtual":
         where = f"<b>Travel:</b> {where}"
     meta = badge + " · ".join(filter(None, [_when(ev), e_(ev["source"]), where]))
     speakers = f'<div style="color:#555;font-size:15px">Speakers: {e_(", ".join(ev["speakers"][:6]))}</div>' if ev.get("speakers") else ""
@@ -77,7 +77,10 @@ def _section(name, cards):
 
 def build(events, profile, today, failures):
     """Each event appears once, in the first section that claims it:
-    this week, happy hours and networking, a topic, or big events ahead."""
+    this week, happy hours and networking (unless the profile turns that
+    section off), a topic, or big events ahead."""
+    city = profile["city"]
+    card = lambda e, **kw: _card(e, city["local_label"], **kw)
     week_end = today + timedelta(days=6)
     local_until = today + timedelta(days=profile["lookahead_days"])
     top = profile["top_pick_score"]
@@ -94,33 +97,36 @@ def build(events, profile, today, failures):
 
     def is_travel(e):
         return e.get("event_type") in ("conference", "industry_day") and (
-            not e.get("dc_area", True) or date.fromisoformat(e["date"]) > local_until)
+            not e.get("local", True) or date.fromisoformat(e["date"]) > local_until)
 
     travel = sorted((e for e in regular if is_travel(e)), key=by_date)
     rest = [e for e in regular if not is_travel(e)]
     this_week = sorted((e for e in rest if e["this_week"]), key=by_date)
     rest = [e for e in rest if not e["this_week"]]
-    networking = sorted((e for e in rest if e.get("event_type") == "networking"
-                         or e.get("worker") == "networking"), key=by_date)
+    networking = []
+    if profile.get("networking_section", True):
+        networking = sorted((e for e in rest if e.get("event_type") == "networking"
+                             or e.get("networking_source")), key=by_date)
     rest = [e for e in rest if e not in networking]
+    happy_hours = f"{len(networking)} happy hours and meetups, " if networking else ""
 
     parts = ['<div style="font-family:Georgia,serif;font-size:16px;max-width:680px;color:#111">',
-             f'<h1 style="font-size:24px">DC events: week of {today:%B} {today.day}</h1>',
+             f'<h1 style="font-size:24px">{e_(city["name"])} events: week of {today:%B} {today.day}</h1>',
              f'<p style="color:#555;font-size:15px">{len(this_week)} events this week, '
-             f'{len(networking)} happy hours and meetups, {len(rest)} more over the next three weeks '
-             f'and {len(travel)} bigger events further out. DC events you can attend in person rank '
-             'first. NEW marks events not in an earlier digest.</p>']
+             f'{happy_hours}{len(rest)} more over the next three weeks '
+             f'and {len(travel)} bigger events further out. {e_(city["name"])} events you can attend '
+             'in person rank first. NEW marks events not in an earlier digest.</p>']
     parts.append(_section(f"This week ({today:%b} {today.day} to {week_end:%b} {week_end.day})",
-                          [_card(e) for e in this_week]))
-    parts.append(_section("Happy hours, meetups and networking", [_card(e) for e in networking]))
+                          [card(e) for e in this_week]))
+    parts.append(_section("Happy hours, meetups and networking", [card(e) for e in networking]))
     for cat in profile["categories"]:
         evs = sorted((e for e in rest if e.get("category") == cat["id"]), key=in_person_first)
-        parts.append(_section(cat["name"], [_card(e) for e in evs]))
+        parts.append(_section(cat["name"], [card(e) for e in evs]))
     parts.append(_section("Conferences and big events ahead (worth planning or traveling for)",
-                          [_card(e) for e in travel]))
-    parts.append(_section("Congressional hearings", [_card(e) for e in hearings]))
+                          [card(e) for e in travel]))
+    parts.append(_section("Congressional hearings", [card(e) for e in hearings]))
     parts.append(_section("Industry days and proposers days (SAM.gov, posted in the last two weeks)",
-                          [_card(e, show_calendar=False) for e in notices]))
+                          [card(e, show_calendar=False) for e in notices]))
     if failures:
         items = "".join(f"<li>{e_(name)}: {e_(msg)}</li>" for name, msg in failures)
         parts.append(f'<h2 style="font-size:17px;margin-top:28px;color:#a50e0e">Sources that failed this week</h2>'
