@@ -31,6 +31,9 @@ other_orgs:
 networking:
   - {id: dtdc,      name: Defense Tech DC (Luma),       url: "https://luma.com/defense-tech-dc", fetch: luma}
   - {id: station,   name: STATION DC (Luma),            url: "https://luma.com/stationdc", fetch: luma}
+  - {id: vcdc,      name: VC in DC (Luma),              url: "https://luma.com/vcdc", fetch: luma}
+  - {id: dctech_st, name: DC Tech Events (startups),    url: "https://dctech.events/categories/startups/"}
+  - {id: dctech_gov, name: DC Tech Events (govtech),    url: "https://dctech.events/categories/govtech/"}
   - {id: luma_dc,   name: Luma DC,                      url: "https://luma.com/dc", fetch: luma}
   - {id: diie,      name: Silicon Nation newsletter,    url: "https://diie.substack.com/feed", fetch: rss}
   - {id: meetup,    name: Meetup (defense tech),        url: "https://www.meetup.com/find/?keywords=defense%20tech&location=us--dc--Washington", fetch: browser}
