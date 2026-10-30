@@ -57,7 +57,8 @@ def page_text(html, base_url):
     return re.sub(r"\n{2,}", "\n", text)
 
 
-def source_text(src, today=None, until=None, area="", recent_days=30):
+def source_text(src, today=None, until=None, area="", recent_days=30,
+                tz="America/New_York", tz_label="ET"):
     """Text for one source, by its `fetch` type: http (default), browser,
     luma (a Luma calendar or city page), rss (a newsletter feed), localist
     (a university calendar API) or search (a Claude web search agent)."""
@@ -68,7 +69,7 @@ def source_text(src, today=None, until=None, area="", recent_days=30):
     if kind == "localist":
         return localist_text(src["url"], src.get("keywords", ""), today, until)
     if kind == "luma":
-        return luma_text(src["url"], until)
+        return luma_text(src["url"], until, tz, tz_label)
     if kind == "rss":
         return rss_text(src["url"], recent_days)
     return page_text(get_html(src["url"], browser=kind == "browser"), src["url"])
@@ -78,7 +79,7 @@ LUMA_DISCOVER = "https://api.lu.ma/discover/get-paginated-events"
 LUMA_CALENDAR = "https://api.lu.ma/calendar/get-items"
 
 
-def luma_text(url, until=None):
+def luma_text(url, until=None, tz="America/New_York", tz_label="ET"):
     """Luma renders dates client-side, so read the event data embedded in
     the page instead of its visible text. City and calendar pages embed only
     their first 20 or so events, so the rest come from Luma's API, up to
@@ -105,7 +106,7 @@ def luma_text(url, until=None):
                 hosts = ", ".join(h.get("name", "") for h in o.get("hosts") or [] if isinstance(h, dict))
                 lines.append(" | ".join(filter(None, [
                     ev.get("name", ""),
-                    start.astimezone(ZoneInfo("America/New_York")).strftime("%A %B %d %Y, %I:%M %p ET"),
+                    start.astimezone(ZoneInfo(tz)).strftime(f"%A %B %d %Y, %I:%M %p {tz_label}"),
                     where, f"Hosts: {hosts}" if hosts else "",
                     f"<https://luma.com/{ev.get('url', '')}>"])))
             for v in o.values():

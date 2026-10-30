@@ -43,11 +43,11 @@ def _obj(props):
 S = {"type": "string"}
 
 
-def event_schema(area):
+def event_schema(area, tz_label="ET"):
     return _obj({"events": {"type": "array", "items": _obj({
         "title": S,
         "date": {"type": "string", "description": "YYYY-MM-DD; for a speaking_call, the application deadline"},
-        "start_time": {"type": "string", "description": "e.g. 10:00 AM ET, or empty"},
+        "start_time": {"type": "string", "description": f"12-hour local time, e.g. 10:00 AM {tz_label}, or empty"},
         "location": S,
         "format": {"type": "string", "enum": ["in-person", "virtual", "hybrid", "unknown"]},
         "local": {"type": "boolean", "description": f"Held in {area}"},
@@ -86,7 +86,7 @@ for anything the page does not say. Do not invent speakers or details.
 <page>
 {text}
 </page>"""
-    return _json_call(prompt, event_schema(area))["events"]
+    return _json_call(prompt, event_schema(area, profile["city"].get("tz_label", "ET")))["events"]
 
 
 SEARCH_TOOLS = [

@@ -1,9 +1,9 @@
-# Events trackers: DC and Boston
+# Events trackers: DC, Boston and London
 
-Two weekly digests share this code. Each city has its own folder under
+Three digests share this code. Each city has its own folder under
 `config/` (`profile.yaml` for the reader and scoring, `sources.yaml` for the
-workers) and its own workflow. The DC digest is described first; the Boston
-digest is under [Boston](#boston) below.
+workers) and its own workflow. The DC digest is described first; the Boston and
+London digests are under [Boston](#boston) and [London](#london) below.
 
 Every Monday at about 7am ET this emails a digest of upcoming DC events worth
 attending: think tank panels, defense and space industry events, congressional
@@ -38,7 +38,7 @@ Search agents use Claude's web search and page-fetch tools, then the same
 extraction step as the page scrapers. Networking events aimed at affinity
 groups, student-only and members-only events are filtered out or scored down.
 Each worker then scores its own events. Events seen in an earlier digest are
-recorded in `data/seen.json` (Boston: `data/boston/seen.json`), which the workflow commits back, so new ones get
+recorded in `data/seen.json` (Boston and London: `data/<city>/seen.json`), which the workflow commits back, so new ones get
 a NEW tag. Any source that fails is listed at the bottom of the email.
 
 AUSA, Heritage, FDD, CSBA, Axios and NDIA block automated access with
@@ -77,6 +77,37 @@ by hand: Actions > Weekly Boston events digest > Run workflow, or locally
 `python -m tracker.main --city boston --test`, which marks the subject as a
 test and doesn't record events as seen.
 
+## London
+
+The London digest (`config/london/`, `.github/workflows/weekly-digest-london.yml`)
+is the Boston digest pointed at UK and European limited partners. It's for a
+Rosc GP raising the next fund, so LP access dominates the scoring: an event
+with allocators in the room scores 7 or more, and one full of founders rarely
+clears 6. Sections run family offices and wealth managers first, then
+pensions, endowments, fund-of-funds and government investors, then emerging
+manager and LP-GP forums, speaking slots, co-investors, deal flow, receptions
+and talks. Times, calendar links and the 7am send slot use UK time. It goes
+out every other Monday from Nov 9, 2026, so it alternates with Boston.
+
+| Worker | Sources | Method |
+|---|---|---|
+| `lp_finance` | UK Private Capital (the former BVCA), the LBS Institute of Entrepreneurship and Private Capital, Invest Europe, PEI, TheCityUK | page text, Claude extracts |
+| `lp_private` | Search agent for Campden Wealth, the Family Office Club, PAM Insight, Spear's, Citywealth, Opal and Markets Group forums, and bank and law firm family office dinners | Claude web search |
+| `lp_institutional` | Search agents for the British Business Bank, NSSIF, the NATO Innovation Fund, Pensions UK, the LGPS pools, IPE, endowments and fund-of-funds, plus emerging manager and LP-GP events | Claude web search |
+| `speaking` | Search agent for open calls for speakers and panelists at events LPs attend | Claude web search |
+| `investor_networks` | UK Business Angels Association, plus a search agent for angel groups, EIS investor events and diaspora networks | page text and web search |
+| `universities` | Imperial events, plus a search agent for LBS, UCL, KCL, LSE Generate and Bayes | page text and web search |
+| `defence_dealflow` | RUSI, plus a search agent for UKDI, DASA, NSSIF, DIANA, Plexal and London demo days | page text and web search |
+| `networking` | Luma London and Eventbrite searches (venture capital, family office, investing) | Luma and page text |
+| `general_search` | Anything the named sources miss | Claude web search |
+
+Campden Wealth, Markets Group, Spear's, Financial News, Sifted, Chatham
+House and UCL block automated access, and the Family Office Club and CFA
+Society UK don't list dates, so the search agents cover them. Add
+`LONDON_DIGEST_TO` to send it somewhere other than `DIGEST_TO`. To send a
+test: Actions > Weekly London LP events digest > Run workflow, or locally
+`python -m tracker.main --city london --test`.
+
 ## Setup: secrets
 
 Add these under the repo's Settings > Secrets and variables > Actions >
@@ -100,6 +131,7 @@ python -m tracker.main --fetch-only          # check every source loads; no Clau
 python -m tracker.main --dry-run             # write out/digest.html; sends nothing
 python -m tracker.main --only hill,industry  # run some workers only
 python -m tracker.main --city boston --dry-run  # the Boston digest
+python -m tracker.main --city london --dry-run  # the London LP digest
 python -m pytest tests                       # offline tests
 ```
 
@@ -107,9 +139,9 @@ To trigger a real send from GitHub: Actions > Weekly DC events digest > Run work
 
 ## Tuning
 
-- `config/<city>/profile.yaml`: the city, the reader, interests, what to score up or down, the categories,
+- `config/<city>/profile.yaml`: the city and its timezone (default US Eastern), the reader, interests, what to score up or down, the categories,
   the in-person bonus (`format_bonus`), the score cutoff and how far ahead to look.
 - `config/<city>/sources.yaml`: the worker list, sources, the committee filter and the
   SAM.gov phrases.
-- `send_every_weeks` and `first_send` in a profile: send every N weeks (Boston: every other Monday from Nov 2, 2026).
+- `send_every_weeks` and `first_send` in a profile: send every N weeks (Boston: every other Monday from Nov 2, 2026; London: the Mondays in between).
 - `TRACKER_MODEL` env var: the Claude model (default `claude-sonnet-5-5`).

@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 e_ = html.escape
 
 
-def calendar_link(ev):
+def calendar_link(ev, tz="America/New_York"):
     """Google Calendar 'add event' link. Opening it shows the event prefilled,
     and clicking Save is the approval."""
     d = date.fromisoformat(ev["date"])
@@ -22,7 +22,7 @@ def calendar_link(ev):
     details = "\n".join(filter(None, [ev.get("url", ""), f"Via {ev['source']}"]))
     return "https://calendar.google.com/calendar/render?" + urlencode({
         "action": "TEMPLATE", "text": ev["title"], "dates": dates,
-        "ctz": "America/New_York", "details": details,
+        "ctz": tz, "details": details,
         "location": ev.get("location", ""),
     })
 
@@ -56,7 +56,7 @@ def _badge(fmt):
             f'padding:1px 6px;border-radius:8px;margin-right:6px">{label}</span>')
 
 
-def _card(ev, local_label="", show_calendar=True):
+def _card(ev, local_label="", show_calendar=True, tz="America/New_York"):
     pill = '<span style="background:{};color:{};font-size:12px;font-weight:600;padding:1px 6px;border-radius:8px;margin-left:6px">{}</span>'
     new = "".join([
         pill.format("#fce8e6", "#a50e0e", "THIS WEEK") if ev.get("this_week") else "",
@@ -70,7 +70,7 @@ def _card(ev, local_label="", show_calendar=True):
         where = f"<b>Travel:</b> {where}"
     meta = badge + " · ".join(filter(None, [_when(ev), e_(ev["source"]), where]))
     speakers = f'<div style="color:#555;font-size:15px">Speakers: {e_(", ".join(ev["speakers"][:6]))}</div>' if ev.get("speakers") else ""
-    cal = f' &nbsp;<a href="{e_(calendar_link(ev))}" style="font-size:13px">Add to calendar</a>' if show_calendar else ""
+    cal = f' &nbsp;<a href="{e_(calendar_link(ev, tz))}" style="font-size:13px">Add to calendar</a>' if show_calendar else ""
     return f"""<div style="margin:0 0 14px 0">
 <div style="font-weight:600">{title}{new}</div>
 <div style="color:#444;font-size:15px">{meta}</div>{speakers}
@@ -89,7 +89,7 @@ def build(events, profile, today, failures):
     this week, happy hours and networking (unless the profile turns that
     section off), a topic, or big events ahead."""
     city = profile["city"]
-    card = lambda e, **kw: _card(e, city["local_label"], **kw)
+    card = lambda e, **kw: _card(e, city["local_label"], tz=city.get("timezone", "America/New_York"), **kw)
     week_end = today + timedelta(days=6 - today.weekday())  # through Sunday; next week starts Monday
     local_until = today + timedelta(days=profile["lookahead_days"])
     top = profile["top_pick_score"]

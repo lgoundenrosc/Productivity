@@ -1,0 +1,106 @@
+# The city the digest covers. `area` goes into Claude's prompts.
+city:
+  name: London
+  long_name: London
+  area: "Greater London (the City, Canary Wharf, Mayfair, King's Cross, Shoreditch and the rest of Greater London)"
+  local_label: London
+  seen_file: data/london/seen.json
+  timezone: Europe/London
+  tz_label: UK time
+
+# Who the digest is for. This text goes to Claude verbatim when scoring.
+reader: >
+  General partner at Rosc, a pre-seed and seed venture fund that is raising
+  its next fund and wants UK and European limited partners. Goes to London
+  events mainly to meet LPs: to be in the room with them, to speak or sit on
+  a panel in front of them, and to get introductions through fund-of-funds,
+  placement agents and other GPs. Seeing strong startups and meeting
+  co-investors come a distant second.
+
+interests: >
+  Limited partners of every kind: single and multi-family offices, wealth
+  managers and private banks, pension funds and the Local Government Pension
+  Scheme pools, university endowments and foundations, fund-of-funds,
+  insurers, sovereign wealth funds with London offices, corporate venture
+  arms and government investors such as the British Business Bank, British
+  Patient Capital, the National Wealth Fund, the National Security Strategic
+  Investment Fund and the NATO Innovation Fund. Emerging manager programmes,
+  first-time fund forums and allocator views on venture. A lean toward deep
+  tech, defence and dual-use, AI, robotics and hardware.
+
+boost: >
+  Rooms with LPs in them: family office forums and dinners, allocator,
+  pension and endowment CIO panels, LP-GP breakfasts, fund-of-funds and
+  wealth management events, emerging manager and first-time fundraising
+  forums, UK Private Capital (the former BVCA) events, the LBS Family Office
+  Conference and Private Capital Symposium, PEI, Campden, Markets Group and
+  Opal Group forums held in London, and receptions hosted by fund-of-funds,
+  placement agents or fund-formation law firms where LPs and GPs mix. Events
+  where government LPs (British Business Bank, NSSIF, NATO Innovation Fund,
+  National Wealth Fund) speak about their venture programmes. Open calls for
+  speakers or panelists at events LPs attend. Small, curated, invitation-led
+  events over large ones.
+
+penalize: >
+  Events built for founders learning basics (how to raise, legal or tax 101,
+  vendor office hours). Events selling services to fund managers (fund
+  administration, compliance or software demos) with no allocators on the
+  programme. Purely academic talks. Generic startup pitch nights with no
+  investors of note, and consumer or ecommerce events. Big expos with no
+  investor programme. Webinars. Student-only, resident-only and members-only
+  events the reader can't join. Events limited to a gender or racial group,
+  since the digest can't tell whether the reader qualifies. Events outside
+  Greater London unless they are major LP, family office or venture
+  conferences worth traveling for (SuperVenture, SuperReturn, Invest Europe,
+  Campden or similar).
+
+audience_note: >
+  Drop student-only events (admissions, careers fairs, lectures for enrolled
+  students), events open only to residents or members, and purely social
+  events (parties, fitness, run clubs, hobbies). Keep investor networks built
+  around a nationality, diaspora or community when outside investors can
+  attend. Keep closed-door family office and allocator events that a fund
+  manager can apply to attend or sponsor, and say so in the summary.
+networking_note: >
+  This source is checked for networking. Keep receptions, dinners, breakfasts
+  and meetups where LPs, family offices, wealth managers or fund managers
+  gather, plus investor receptions and demo days. Drop founder-only meetups
+  and events with no professional angle.
+scoring_note: >
+  The reader's fund is raising, so LP access dominates the score. An event
+  with allocators, family offices or fund-of-funds in the room scores 7 or
+  more; a chance to speak in front of them scores higher still. An event
+  full of founders and no LPs rarely scores above 6. Name the LPs or LP
+  types expected in the room in the reason when the page says.
+
+# Receptions and meetups go into the topic sections below, so an LP dinner
+# lands under LP access instead of a general networking list.
+networking_section: false
+
+# Digest sections, in display order. Claude assigns each event one category.
+categories:
+  - {id: lp_private,  name: "LP access: family offices, wealth managers and private banks"}
+  - {id: lp_inst,     name: "LP access: pensions, endowments, fund-of-funds and government investors"}
+  - {id: fundraising, name: "Emerging manager, LP-GP and fundraising forums"}
+  - {id: speaking,    name: "Speaking and panel slots"}
+  - {id: investors,   name: "Co-investors, angel groups and investor networks"}
+  - {id: dealflow,    name: "Deal flow: demo days, pitch events and founder showcases"}
+  - {id: networking,  name: "Receptions and meetups"}
+  - {id: other,       name: "Talks and research worth attending"}
+
+# Added to Claude's score so London events you can walk into rank first.
+# LP access depends on being in the room, so online-only events lose more.
+location_bonus:
+  local_in_person: 2
+  local_hybrid: 1
+  online_only: -2
+
+# Sent every other Monday, alternating with the Boston digest. Hand-run
+# digests (workflow_dispatch or the command line) always send.
+send_every_weeks: 2
+first_send: 2026-11-09
+
+min_score: 5        # events below this are dropped from the digest
+top_pick_score: 8   # events at or above this get a TOP PICK badge
+lookahead_days: 21          # talks, receptions and other local events
+travel_lookahead_days: 120  # conferences and speaker calls, which need planning or travel

@@ -39,5 +39,5 @@ jobs:
           git config user.email "events-digest-bot@users.noreply.github.com"
           git add data/boston/seen.json
           git diff --cached --quiet || git commit -m "Record events sent in this week's Boston digest"
-          git pull --rebase  # the DC digest may have pushed first
+          git pull --rebase  # the DC or London digest may have pushed first
           git push

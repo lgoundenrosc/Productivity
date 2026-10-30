@@ -9,6 +9,7 @@ from tracker import digest, gov, main, store
 
 PROFILE = yaml.safe_load(open("config/dc/profile.yaml"))
 BOSTON = yaml.safe_load(open("config/boston/profile.yaml"))
+LONDON = yaml.safe_load(open("config/london/profile.yaml"))
 
 
 def ev(**kw):
@@ -157,7 +158,7 @@ def test_search_agent_resumes_after_pause(monkeypatch):
 
 
 def test_city_configs_are_complete():
-    for city in ("dc", "boston"):
+    for city in ("dc", "boston", "london"):
         cfg = yaml.safe_load(open(f"config/{city}/sources.yaml"))
         profile = yaml.safe_load(open(f"config/{city}/profile.yaml"))
         assert {"name", "long_name", "area", "local_label", "seen_file"} <= set(profile["city"])
@@ -199,3 +200,31 @@ def test_boston_sends_every_other_monday():
     assert not main.send_week(BOSTON, date(2026, 11, 9))
     assert main.send_week(BOSTON, date(2026, 11, 16))
     assert main.send_week(PROFILE, date(2026, 11, 9))  # DC stays weekly
+
+
+def test_london_uses_uk_time():
+    assert main.city_tz(LONDON).key == "Europe/London"
+    q = parse_qs(urlparse(digest.calendar_link(ev(start_time="6:30 PM UK time"), "Europe/London")).query)
+    assert q["ctz"] == ["Europe/London"] and q["dates"][0].endswith("T183000/20261022T200000")
+    html = digest.build([ev(category="lp_private", location="Mayfair, London")], LONDON, date(2026, 10, 19), [])
+    assert "ctz=Europe%2FLondon" in html
+
+
+def test_london_schedule_guard(monkeypatch):
+    real = main.intended_slot_ok.__globals__["datetime"]
+    tz = main.city_tz(LONDON)
+    with mock.patch.object(main, "datetime") as dt:
+        monkeypatch.setenv("GITHUB_EVENT_SCHEDULE", "50 5 * * 1")
+        dt.now.return_value = real(2026, 10, 19, 6, 0, tzinfo=main.timezone.utc)  # BST: slot is 6:50
+        assert main.intended_slot_ok(tz)
+        dt.now.return_value = real(2026, 11, 9, 6, 0, tzinfo=main.timezone.utc)   # GMT: slot is 5:50
+        assert not main.intended_slot_ok(tz)
+        monkeypatch.setenv("GITHUB_EVENT_SCHEDULE", "50 6 * * 1")
+        dt.now.return_value = real(2026, 11, 9, 7, 0, tzinfo=main.timezone.utc)   # GMT: slot is 6:50
+        assert main.intended_slot_ok(tz)
+
+
+def test_london_alternates_with_boston():
+    for monday in (date(2026, 11, 2), date(2026, 11, 9), date(2026, 11, 16), date(2026, 11, 23)):
+        assert main.send_week(BOSTON, monday) != main.send_week(LONDON, monday)
+    assert LONDON["categories"][0]["id"].startswith("lp")

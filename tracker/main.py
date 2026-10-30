@@ -4,6 +4,7 @@
     python -m tracker.main --fetch-only            # check every source loads, no Claude calls
     python -m tracker.main                         # full run: email the DC digest, update seen events
     python -m tracker.main --city boston --test    # email a test Boston digest, record nothing
+    python -m tracker.main --city london --dry-run # the London LP digest
 """
 import argparse
 import os
@@ -33,7 +34,9 @@ def scrape_group(sources, profile, today, until, fetch_only, networking=False):
             if fetch_only and src.get("fetch") == "search":
                 print(f"  {src['name']}: search agent (needs ANTHROPIC_API_KEY; skipped)")
                 continue
-            text = fetch.source_text(src, today, until, profile["city"]["area"])
+            text = fetch.source_text(src, today, until, profile["city"]["area"],
+                                     tz=profile["city"].get("timezone", "America/New_York"),
+                                     tz_label=profile["city"].get("tz_label", "ET"))
             if fetch_only:
                 print(f"  {src['name']}: {len(text):,} chars of text")
                 continue
@@ -111,10 +114,15 @@ def place(e, today, local_until, bonus):
     return True
 
 
-def intended_slot_ok():
-    """The workflow fires at 10:50 and 11:50 UTC on Mondays. Only the run
-    scheduled for 6:50 ET goes ahead, so the email lands near 7:00 in both
-    EDT and EST, even when GitHub starts the job late."""
+def city_tz(profile):
+    return ZoneInfo(profile["city"].get("timezone", "America/New_York"))
+
+
+def intended_slot_ok(tz=ET):
+    """Each workflow fires twice on Mondays, an hour apart in UTC (DC and
+    Boston at 10:50 and 11:50, London at 5:50 and 6:50). Only the run
+    scheduled for 6:50 local time goes ahead, so the email lands near 7:00
+    in summer and winter time, even when GitHub starts the job late."""
     cron = os.environ.get("GITHUB_EVENT_SCHEDULE")
     if not cron:
         return True
@@ -123,7 +131,7 @@ def intended_slot_ok():
     slot = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if slot > now:
         slot -= timedelta(days=1)
-    return slot.astimezone(ET).hour == 6
+    return slot.astimezone(tz).hour == 6
 
 
 def send_week(profile, today):
@@ -142,13 +150,16 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="write out/digest.html instead of emailing")
     ap.add_argument("--fetch-only", action="store_true", help="load sources without calling Claude")
     ap.add_argument("--only", help="comma-separated worker names, e.g. hill,other_orgs")
-    ap.add_argument("--city", default="dc", help="config folder under config/, e.g. dc or boston")
+    ap.add_argument("--city", default="dc", help="config folder under config/: dc, boston or london")
     ap.add_argument("--test", action="store_true",
                     help="email the digest marked as a test and leave the seen-events record alone")
     args = ap.parse_args()
 
-    if not intended_slot_ok():
-        print("Not the 7am ET slot this week (daylight saving offset); exiting.")
+    cfg = yaml.safe_load((ROOT / "config" / args.city / "sources.yaml").read_text())
+    profile = yaml.safe_load((ROOT / "config" / args.city / "profile.yaml").read_text())
+    city, tz = profile["city"], city_tz(profile)
+    if not intended_slot_ok(tz):
+        print("Not the 7am local slot this week (daylight saving offset); exiting.")
         return 0
 
     needed = [] if args.fetch_only else ["ANTHROPIC_API_KEY"]
@@ -160,13 +171,10 @@ def main():
               "(Settings > Secrets and variables > Actions); see the README.")
         return 1
 
-    cfg = yaml.safe_load((ROOT / "config" / args.city / "sources.yaml").read_text())
-    profile = yaml.safe_load((ROOT / "config" / args.city / "profile.yaml").read_text())
-    city = profile["city"]
-    if os.environ.get("GITHUB_EVENT_SCHEDULE") and not send_week(profile, datetime.now(ET).date()):
+    if os.environ.get("GITHUB_EVENT_SCHEDULE") and not send_week(profile, datetime.now(tz).date()):
         print(f"{city['name']} digest goes out every {profile['send_every_weeks']} weeks; not this week.")
         return 0
-    today = datetime.now(ET).date()
+    today = datetime.now(tz).date()
     local_until = today + timedelta(days=profile["lookahead_days"])
     until = today + timedelta(days=profile["travel_lookahead_days"])
 
