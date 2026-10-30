@@ -123,10 +123,12 @@ def build(events, profile, today, failures):
     rest = [e for e in rest if e not in networking]
     happy_hours = f"{len(networking)} happy hours and meetups, " if networking else ""
 
+    weeks = {3: "three", 4: "four", 5: "five", 6: "six"}.get(profile["lookahead_days"] // 7,
+                                                           str(profile["lookahead_days"] // 7))
     parts = ['<div style="font-family:Georgia,serif;font-size:16px;max-width:680px;color:#111">',
              f'<h1 style="font-size:24px">{e_(city["name"])} events: week of {today:%B} {today.day}</h1>',
              f'<p style="color:#555;font-size:15px">{len(this_week)} event{"" if len(this_week) == 1 else "s"} this week, '
-             f'{f"{len(next_week)} next week, " if next_week else ""}{happy_hours}{len(rest)} more over the next three weeks '
+             f'{f"{len(next_week)} next week, " if next_week else ""}{happy_hours}{len(rest)} more over the next {weeks} weeks '
              f'and {len(travel)} bigger events further out. {e_(city["name"])} events you can attend '
              'in person rank first. NEW marks events not in an earlier digest.</p>']
     parts.append(_section(f"This week ({today:%b} {today.day} to {week_end:%b} {week_end.day})",

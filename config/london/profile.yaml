@@ -127,5 +127,5 @@ priority_weeks: 2
 
 min_score: 5        # events below this are dropped from the digest
 top_pick_score: 8   # events at or above this get a TOP PICK badge
-lookahead_days: 21          # talks, receptions and other local events
+lookahead_days: 28          # talks, receptions and other local events (four weeks)
 travel_lookahead_days: 120  # conferences and speaker calls, which need planning or travel
