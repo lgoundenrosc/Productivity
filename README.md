@@ -83,9 +83,12 @@ The London digest (`config/london/`, `.github/workflows/weekly-digest-london.yml
 is the Boston digest pointed at UK and European limited partners. It's for a
 Rosc GP raising the next fund, so LP access dominates the scoring: an event
 with allocators in the room scores 7 or more, and one full of founders rarely
-clears 6. Sections run family offices and wealth managers first, then
-pensions, endowments, fund-of-funds and government investors, then emerging
-manager and LP-GP forums, speaking slots, co-investors, deal flow, receptions
+clears 6. Defence comes second: defence investor events score 8 or more,
+and software or general tech events with no defence, security, space or
+hardware angle score 4 or less. The next two weeks lead the email, each in
+its own section. Sections then run family offices and wealth managers,
+pensions, endowments, fund-of-funds and government investors, defence and
+national security, emerging manager and LP-GP forums, speaking slots, co-investors, deal flow, receptions
 and talks. Times, calendar links and the 7am send slot use UK time. It goes
 out every other Monday from Nov 9, 2026, so it alternates with Boston.
 
@@ -97,12 +100,14 @@ out every other Monday from Nov 9, 2026, so it alternates with Boston.
 | `speaking` | Search agent for open calls for speakers and panelists at events LPs attend | Claude web search |
 | `investor_networks` | UK Business Angels Association, plus a search agent for angel groups, EIS investor events and diaspora networks | page text and web search |
 | `universities` | Imperial events, plus a search agent for LBS, UCL, KCL, LSE Generate and Bayes | page text and web search |
-| `defence_dealflow` | RUSI, plus a search agent for UKDI, DASA, NSSIF, DIANA, Plexal and London demo days | page text and web search |
+| `defence` | ADS Group, RUSI, Council on Geostrategy, Eventbrite (defence) | page text, Claude extracts |
+| `defence_search` | Search agents for defence investor events (NSSIF, NATO Innovation Fund, DIANA, UKDI, DASA, City of London defence finance, defence VCs) and for defence industry and policy events (IISS, Chatham House, Policy Exchange, KCL, SMi, Defence iQ) | Claude web search |
+| `dealflow` | Search agent for deep tech, robotics, space and hardware demo days | Claude web search |
 | `networking` | Luma London and Eventbrite searches (venture capital, family office, investing) | Luma and page text |
 | `general_search` | Anything the named sources miss | Claude web search |
 
 Campden Wealth, Markets Group, Spear's, Financial News, Sifted, Chatham
-House and UCL block automated access, and the Family Office Club and CFA
+House, IISS, Policy Exchange and UCL block automated access, and the Family Office Club and CFA
 Society UK don't list dates, so the search agents cover them. Add
 `LONDON_DIGEST_TO` to send it somewhere other than `DIGEST_TO`. To send a
 test: Actions > Weekly London LP events digest > Run workflow, or locally

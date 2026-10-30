@@ -1,11 +1,11 @@
-# London event sources. The digest is built around LP access, so four of
-# the nine workers look for allocators. Pages that block automated access
+# London event sources. The digest is built around LP access first and
+# defence second: three workers look for allocators and two for defence. Pages that block automated access
 # (Campden Wealth, Markets Group, Spear's, Financial News, Sifted, Chatham
 # House, UCL) or don't list dates (Family Office Club, CFA Society UK) are
 # covered by the search agents instead.
 
-workers: [lp_finance, lp_private, lp_institutional, speaking, investor_networks,
-          universities, defence_dealflow, networking, general_search]
+workers: [lp_finance, lp_private, lp_institutional, defence, defence_search, speaking,
+          investor_networks, universities, dealflow, networking, general_search]
 networking_workers: [networking]
 
 # Associations and conference organisers whose calendars list LP events.
@@ -122,23 +122,58 @@ universities:
       investor panels and receptions. Skip lectures, admissions and
       student-only events.
 
-# Deep tech and defence, where Rosc invests, and where defence-minded LPs
-# (NSSIF, the NATO Innovation Fund, family offices with defence mandates) go.
-defence_dealflow:
+# Defence, national security and space, where Rosc invests, and where
+# defence-minded LPs (NSSIF, the NATO Innovation Fund, family offices with
+# defence mandates) go. IISS, Chatham House and Policy Exchange block
+# automated access, so the search agents cover them.
+defence:
+  - {id: ads,       name: ADS Group,                    url: "https://www.adsgroup.org.uk/events/", local_only: true}
   - {id: rusi,      name: RUSI,                         url: "https://www.rusi.org/events"}
-  - id: defence_search
-    name: Defence and deep tech search agent
+  - {id: geostrat,  name: Council on Geostrategy,       url: "https://www.geostrategy.org.uk/events/"}
+  - {id: eb_def,    name: Eventbrite (defence),         url: "https://www.eventbrite.co.uk/d/united-kingdom--london/defence/"}
+
+defence_search:
+  - id: defence_investor_search
+    name: Defence investor search agent
     fetch: search
     focus: >
-      Look for London defence, dual-use and deep tech investor events: UK
-      Defence Innovation (UKDI) and DASA industry and investor days, NSSIF
-      and NATO Innovation Fund events, DIANA, Plexal and the Defence and
-      Security Accelerator showcases, Defence Tech London meetups, ADS Group
-      and techUK defence events, Entrepreneur First, Founders Forum, Seedcamp,
-      Antler and Techstars London demo days, Sifted events, and the Royal
-      Academy of Engineering Enterprise Hub. Keep investor days, demo days,
-      investor panels and receptions. Skip procurement briefings with no
-      investors in the room.
+      Look for London defence, national security and dual-use investment
+      events with investors, LPs or fund managers in the room: NSSIF, the
+      NATO Innovation Fund and NATO DIANA, UK Defence Innovation (UKDI) and
+      DASA investor and industry days, British Business Bank defence and deep
+      tech events, City of London Corporation and Mansion House defence and
+      security finance events and scale-up showcases, UK Finance and bank or
+      law firm defence investment roundtables, defence VC events (Helsing,
+      Shield Capital, Plural and others with London teams), Defence Tech
+      London meetups, Resilience Media, PUBLIC's Defence Disrupted, Plexal,
+      and Luma and Eventbrite defence tech listings in London.
+  - id: defence_industry_search
+    name: Defence industry and policy search agent
+    fetch: search
+    focus: >
+      Look for in-person London defence, security and space events where
+      procurement leads, primes, policy makers and investors speak: IISS,
+      Chatham House, Policy Exchange, the Henry Jackson Society, King's
+      College London War Studies, LSE IDEAS, Imperial's Institute for
+      Security Science and Technology, the Royal Aeronautical Society,
+      UKspace and the Satellite Applications Catapult, techUK's defence and
+      national security programme, SMi Group and Defence iQ (IQPC) defence
+      conferences in London, and defence committee events open to the
+      public. Also note major European defence tech and defence investment
+      conferences in the next four months.
+
+# Startup deal flow outside defence.
+dealflow:
+  - id: dealflow_search
+    name: Deep tech deal flow search agent
+    fetch: search
+    focus: >
+      Look for London deep tech, robotics, space and hardware investor
+      events: Entrepreneur First, Founders Forum, Seedcamp, Antler and
+      Techstars London demo days, the Royal Academy of Engineering Enterprise
+      Hub, Plexal and Sifted events. Keep demo days, investor panels and
+      receptions. Skip software, fintech and consumer events with no
+      hardware or defence angle.
 
 networking:
   - {id: luma_ldn,  name: Luma London,                  url: "https://luma.com/london", fetch: luma}

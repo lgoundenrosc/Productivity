@@ -14,8 +14,11 @@ reader: >
   its next fund and wants UK and European limited partners. Goes to London
   events mainly to meet LPs: to be in the room with them, to speak or sit on
   a panel in front of them, and to get introductions through fund-of-funds,
-  placement agents and other GPs. Seeing strong startups and meeting
-  co-investors come a distant second.
+  placement agents and other GPs. Rosc invests in defence, national security
+  and dual-use technology, so the second reason is the London defence
+  community: the investors, procurement leads, primes and policy people who
+  shape that market. Seeing other startups and meeting generalist
+  co-investors come last.
 
 interests: >
   Limited partners of every kind: single and multi-family offices, wealth
@@ -25,8 +28,12 @@ interests: >
   arms and government investors such as the British Business Bank, British
   Patient Capital, the National Wealth Fund, the National Security Strategic
   Investment Fund and the NATO Innovation Fund. Emerging manager programmes,
-  first-time fund forums and allocator views on venture. A lean toward deep
-  tech, defence and dual-use, AI, robotics and hardware.
+  first-time fund forums and allocator views on venture. Defence, national
+  security, space and dual-use technology above everything else in the
+  startup world: uncrewed systems, autonomy, sensing, space, energetics,
+  advanced manufacturing, resilience and defence procurement reform. Robotics,
+  hardware and deep tech next. Software matters only where it serves defence,
+  security or space.
 
 boost: >
   Rooms with LPs in them: family office forums and dinners, allocator,
@@ -37,7 +44,13 @@ boost: >
   Opal Group forums held in London, and receptions hosted by fund-of-funds,
   placement agents or fund-formation law firms where LPs and GPs mix. Events
   where government LPs (British Business Bank, NSSIF, NATO Innovation Fund,
-  National Wealth Fund) speak about their venture programmes. Open calls for
+  National Wealth Fund) speak about their venture programmes. Defence
+  investment events: defence finance and investor forums, UK Defence
+  Innovation (UKDI) and DASA investor or industry days, ADS Group briefings
+  on what the MOD will buy, RUSI, Council on Geostrategy, IISS and Policy
+  Exchange events on defence industry and capability, SMi and Defence iQ
+  defence conferences with investor sessions, and defence tech meetups and
+  demo days. Open calls for
   speakers or panelists at events LPs attend. Small, curated, invitation-led
   events over large ones.
 
@@ -45,7 +58,10 @@ penalize: >
   Events built for founders learning basics (how to raise, legal or tax 101,
   vendor office hours). Events selling services to fund managers (fund
   administration, compliance or software demos) with no allocators on the
-  programme. Purely academic talks. Generic startup pitch nights with no
+  programme. Software, SaaS, fintech, crypto, martech and AI-application
+  events with no link to defence, security, space or hardware, even when
+  investors attend. Defence events that are only training on bid writing or
+  compliance, or internal member admin. Purely academic talks. Generic startup pitch nights with no
   investors of note, and consumer or ecommerce events. Big expos with no
   investor programme. Webinars. Student-only, resident-only and members-only
   events the reader can't join. Events limited to a gender or racial group,
@@ -70,8 +86,12 @@ scoring_note: >
   The reader's fund is raising, so LP access dominates the score. An event
   with allocators, family offices or fund-of-funds in the room scores 7 or
   more; a chance to speak in front of them scores higher still. An event
-  full of founders and no LPs rarely scores above 6. Name the LPs or LP
-  types expected in the room in the reason when the page says.
+  full of founders and no LPs rarely scores above 6. Defence comes next: a
+  defence investor or defence finance event scores 8 or more, and a defence
+  industry or policy event with decision makers on the programme scores 6 to
+  8. A software or general tech event with no defence, security, space or
+  hardware angle scores 4 or less. Name the LPs, LP types or defence
+  decision makers expected in the room in the reason when the page says.
 
 # Receptions and meetups go into the topic sections below, so an LP dinner
 # lands under LP access instead of a general networking list.
@@ -81,6 +101,7 @@ networking_section: false
 categories:
   - {id: lp_private,  name: "LP access: family offices, wealth managers and private banks"}
   - {id: lp_inst,     name: "LP access: pensions, endowments, fund-of-funds and government investors"}
+  - {id: defence,     name: "Defence, national security and space: investors, industry and policy"}
   - {id: fundraising, name: "Emerging manager, LP-GP and fundraising forums"}
   - {id: speaking,    name: "Speaking and panel slots"}
   - {id: investors,   name: "Co-investors, angel groups and investor networks"}
