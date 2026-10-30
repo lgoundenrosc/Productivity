@@ -153,6 +153,7 @@ def main():
     ap.add_argument("--city", default="dc", help="config folder under config/: dc, boston or london")
     ap.add_argument("--test", action="store_true",
                     help="email the digest marked as a test and leave the seen-events record alone")
+    ap.add_argument("--start", help="treat this date (YYYY-MM-DD) as today, e.g. to preview next week's digest")
     args = ap.parse_args()
 
     cfg = yaml.safe_load((ROOT / "config" / args.city / "sources.yaml").read_text())
@@ -174,7 +175,7 @@ def main():
     if os.environ.get("GITHUB_EVENT_SCHEDULE") and not send_week(profile, datetime.now(tz).date()):
         print(f"{city['name']} digest goes out every {profile['send_every_weeks']} weeks; not this week.")
         return 0
-    today = datetime.now(tz).date()
+    today = date.fromisoformat(args.start) if args.start else datetime.now(tz).date()
     local_until = today + timedelta(days=profile["lookahead_days"])
     until = today + timedelta(days=profile["travel_lookahead_days"])
 

@@ -100,6 +100,10 @@ location_bonus:
 send_every_weeks: 2
 first_send: 2026-11-09
 
+# The next two weeks lead the digest, each in its own section; later events
+# follow by topic.
+priority_weeks: 2
+
 min_score: 5        # events below this are dropped from the digest
 top_pick_score: 8   # events at or above this get a TOP PICK badge
 lookahead_days: 21          # talks, receptions and other local events

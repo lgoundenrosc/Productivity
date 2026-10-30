@@ -7,6 +7,10 @@ on:
     - cron: "50 5 * * 1"
     - cron: "50 6 * * 1"
   workflow_dispatch: {}
+  # Temporary: a push to the build branch emails a test digest for the week of Nov 2.
+  push:
+    branches: [claude/nifty-heisenberg-2gjpp8]
+    paths: [config/london/**, .github/workflows/weekly-digest-london.yml]
 
 permissions:
   contents: write   # to commit data/london/seen.json
@@ -32,8 +36,9 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_TO: ${{ secrets.LONDON_DIGEST_TO || secrets.DIGEST_TO }}
-        run: python -m tracker.main --city london
+        run: python -m tracker.main --city london ${{ github.event_name == 'push' && '--test --start 2026-11-02' || '' }}
       - name: Save which events were already sent
+        if: github.event_name != 'push'
         run: |
           git config user.name "events-digest-bot"
           git config user.email "events-digest-bot@users.noreply.github.com"

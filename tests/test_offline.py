@@ -228,3 +228,14 @@ def test_london_alternates_with_boston():
     for monday in (date(2026, 11, 2), date(2026, 11, 9), date(2026, 11, 16), date(2026, 11, 23)):
         assert main.send_week(BOSTON, monday) != main.send_week(LONDON, monday)
     assert LONDON["categories"][0]["id"].startswith("lp")
+
+
+def test_london_puts_next_week_second():
+    events = [ev(title="LP breakfast", date="2026-11-05", category="lp_inst"),
+              ev(title="Family office dinner", date="2026-11-11", category="lp_private"),
+              ev(title="Allocator forum", date="2026-11-19", category="lp_inst")]
+    html = digest.build(events, LONDON, date(2026, 11, 2), [])
+    sections = html.split("<h2")
+    assert "Nov 2 to Nov 8" in sections[1] and "LP breakfast" in sections[1]
+    assert "Next week (Nov 9 to Nov 15)" in sections[2] and "Family office dinner" in sections[2]
+    assert "Allocator forum" in sections[3] and "Next week" not in digest.build(events, BOSTON, date(2026, 11, 2), [])

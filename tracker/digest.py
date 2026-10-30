@@ -94,8 +94,11 @@ def build(events, profile, today, failures):
     local_until = today + timedelta(days=profile["lookahead_days"])
     top = profile["top_pick_score"]
     keep = [e for e in events if e.get("score", 0) >= profile["min_score"]]
+    # A profile can set priority_weeks: 2 to give next week its own section too.
+    next_end = week_end + timedelta(days=7) if profile.get("priority_weeks", 1) >= 2 else week_end
     for e in keep:
         e["this_week"] = date.fromisoformat(e["date"]) <= week_end
+        e["next_week"] = week_end < date.fromisoformat(e["date"]) <= next_end
         e["top_pick"] = e.get("score", 0) >= top
 
     by_date = lambda e: (e["date"], _minutes(e))
@@ -111,7 +114,8 @@ def build(events, profile, today, failures):
     travel = sorted((e for e in regular if is_travel(e)), key=by_date)
     rest = [e for e in regular if not is_travel(e)]
     this_week = sorted((e for e in rest if e["this_week"]), key=by_date)
-    rest = [e for e in rest if not e["this_week"]]
+    next_week = sorted((e for e in rest if e["next_week"]), key=by_date)
+    rest = [e for e in rest if not e["this_week"] and not e["next_week"]]
     networking = []
     if profile.get("networking_section", True):
         networking = sorted((e for e in rest if e.get("event_type") == "networking"
@@ -122,11 +126,13 @@ def build(events, profile, today, failures):
     parts = ['<div style="font-family:Georgia,serif;font-size:16px;max-width:680px;color:#111">',
              f'<h1 style="font-size:24px">{e_(city["name"])} events: week of {today:%B} {today.day}</h1>',
              f'<p style="color:#555;font-size:15px">{len(this_week)} event{"" if len(this_week) == 1 else "s"} this week, '
-             f'{happy_hours}{len(rest)} more over the next three weeks '
+             f'{f"{len(next_week)} next week, " if next_week else ""}{happy_hours}{len(rest)} more over the next three weeks '
              f'and {len(travel)} bigger events further out. {e_(city["name"])} events you can attend '
              'in person rank first. NEW marks events not in an earlier digest.</p>']
     parts.append(_section(f"This week ({today:%b} {today.day} to {week_end:%b} {week_end.day})",
                           [card(e) for e in this_week]))
+    parts.append(_section(f"Next week ({week_end + timedelta(days=1):%b} {(week_end + timedelta(days=1)).day} "
+                          f"to {next_end:%b} {next_end.day})", [card(e) for e in next_week]))
     parts.append(_section("Happy hours, meetups and networking", [card(e) for e in networking]))
     for cat in profile["categories"]:
         evs = sorted((e for e in rest if e.get("category") == cat["id"]), key=in_person_first)
