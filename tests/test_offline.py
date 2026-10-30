@@ -153,3 +153,9 @@ def test_search_agent_resumes_after_pause(monkeypatch):
     assert llm.search_text("focus", date(2026, 10, 19), date(2026, 11, 9)) == "Event A | Oct 22"
     second_call = fake.beta.messages.create.call_args_list[1].kwargs
     assert second_call["messages"][-1]["role"] == "assistant"
+
+
+def test_skip_ranges():
+    skips = [(date(2026, 11, 10), date(2026, 11, 14))]
+    assert main.skipped(ev(date="2026-11-12"), skips)
+    assert not main.skipped(ev(date="2026-11-15"), skips)

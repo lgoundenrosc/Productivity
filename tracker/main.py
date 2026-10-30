@@ -109,6 +109,11 @@ def place(e, today, local_until, bonus):
     return True
 
 
+def skipped(e, skips):
+    d = date.fromisoformat(e["date"])
+    return any(a <= d <= b for a, b in skips)
+
+
 def intended_slot_ok():
     """The workflow fires at 10:50 and 11:50 UTC on Mondays. Only the run
     scheduled for 6:50 ET goes ahead, so the email lands near 7:00 in both
@@ -129,6 +134,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="write out/digest.html instead of emailing")
     ap.add_argument("--fetch-only", action="store_true", help="load sources without calling Claude")
     ap.add_argument("--only", help="comma-separated worker names, e.g. hill,other_orgs")
+    ap.add_argument("--start", help="first day of the digest window (YYYY-MM-DD); default today")
+    ap.add_argument("--skip", action="append", default=[],
+                    help="leave out events in a date range, FROM:TO (YYYY-MM-DD), repeatable")
     args = ap.parse_args()
 
     if not intended_slot_ok():
@@ -137,7 +145,8 @@ def main():
 
     cfg = yaml.safe_load((ROOT / "config/sources.yaml").read_text())
     profile = yaml.safe_load((ROOT / "config/profile.yaml").read_text())
-    today = datetime.now(ET).date()
+    today = date.fromisoformat(args.start) if args.start else datetime.now(ET).date()
+    skips = [tuple(date.fromisoformat(d) for d in r.split(":")) for r in args.skip]
     local_until = today + timedelta(days=profile["lookahead_days"])
     until = today + timedelta(days=profile["travel_lookahead_days"])
 
@@ -172,7 +181,8 @@ def main():
             events.append(e)
 
     bonus = profile.get("location_bonus", {})
-    events = [e for e in events if place(e, today, local_until, bonus)]
+    events = [e for e in events if place(e, today, local_until, bonus)
+              and not skipped(e, skips)]
 
     body = digest.build(events, profile, today, failures)
     if args.dry_run:

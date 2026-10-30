@@ -61,6 +61,7 @@ python -m playwright install chromium
 python -m tracker.main --fetch-only          # check every source loads; no Claude calls
 python -m tracker.main --dry-run             # write out/digest.html; sends nothing
 python -m tracker.main --only hill,industry  # run some workers only
+python -m tracker.main --start 2026-11-02 --skip 2026-11-10:2026-11-14  # custom window, skip dates
 python -m pytest tests                       # offline tests
 ```
 
