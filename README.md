@@ -41,6 +41,24 @@ Each worker then scores its own events. Events seen in an earlier digest are
 recorded in `data/seen.json` (Boston and London: `data/<city>/seen.json`), which the workflow commits back, so new ones get
 a NEW tag. Any source that fails is listed at the bottom of the email.
 
+### Event weeks
+
+Every city also runs an `event_weeks` worker for city-wide weeks such as
+Boston Built Week or Tough Tech Week. Dozens of companies, funds and schools
+host the partner events, so no single host's page lists them all. Each run:
+
+1. A search agent looks for event weeks overlapping the digest window and
+   finds each one's calendar page.
+2. New weeks are saved to `data/<city>/event_weeks.json` (DC:
+   `data/event_weeks.json`), which the workflow commits. A week found once
+   keeps being read until it ends, even if a later search misses it.
+3. Each live week's calendar, plus the `known` weeks in `sources.yaml`, is
+   read like any other events page. Pages that build their list with
+   JavaScript fall back to the headless browser.
+
+To make sure a week is always read, add it under `known` in the city's
+`sources.yaml`.
+
 AUSA, Heritage, FDD, CSBA, Axios and NDIA block automated access with
 Cloudflare or Incapsula challenges, so they aren't scraped.
 
@@ -64,6 +82,7 @@ SAM.gov worker.
 | `mit` | Martin Trust Center, MIT events calendar API, plus a search agent for The Engine, Sloan conferences, VMS, Deshpande, ILP and others | browser, Localist API, web search |
 | `universities` | Northeastern calendar API, BU Questrom, plus a search agent for Babson, Tufts, BC, Brandeis, WPI and UMass Lowell | Localist API, page text, web search |
 | `startup_hubs` | Venture Café Cambridge, MassRobotics, MassTLC, LabCentral, MassChallenge, plus a search agent for CIC, Greentown Labs, Techstars, The Engine and others | page text and web search |
+| `event_weeks` | Boston Built Week, Tough Tech Week, Boston Fintech Week and Boston AI Week calendars, plus a search agent that finds new event weeks and remembers them | page text, Luma and web search |
 | `networking` | Luma Boston and Eventbrite searches | Luma and page text |
 | `general_search` | Anything the named sources miss | Claude web search |
 

@@ -61,7 +61,9 @@ def source_text(src, today=None, until=None, area="", recent_days=30,
                 tz="America/New_York", tz_label="ET"):
     """Text for one source, by its `fetch` type: http (default), browser,
     luma (a Luma calendar or city page), rss (a newsletter feed), localist
-    (a university calendar API) or search (a Claude web search agent)."""
+    (a university calendar API), search (a Claude web search agent) or auto
+    (http, then browser if the page comes back nearly empty). `fetch: weeks`
+    sources are expanded into page sources by tracker.weeks before this."""
     kind = src.get("fetch", "http")
     if kind == "search":
         from . import llm
@@ -72,7 +74,17 @@ def source_text(src, today=None, until=None, area="", recent_days=30,
         return luma_text(src["url"], until, tz, tz_label)
     if kind == "rss":
         return rss_text(src["url"], recent_days)
+    if kind == "auto":
+        # A page found by a search agent: try a plain request, and fall back
+        # to the browser if the page builds its event list with JavaScript.
+        text = page_text(get_html(src["url"]), src["url"])
+        if len(text) < AUTO_MIN_CHARS:
+            text = page_text(get_html(src["url"], browser=True), src["url"])
+        return text
     return page_text(get_html(src["url"], browser=kind == "browser"), src["url"])
+
+
+AUTO_MIN_CHARS = 1500
 
 
 LUMA_DISCOVER = "https://api.lu.ma/discover/get-paginated-events"

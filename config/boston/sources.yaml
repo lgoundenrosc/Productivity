@@ -7,7 +7,7 @@
 # Workers run in parallel, each with its own Claude calls. Every name is a
 # group of sources below.
 workers: [lp_finance, investor_networks, speaking, harvard, mit, universities,
-          startup_hubs, networking, general_search]
+          startup_hubs, event_weeks, networking, general_search]
 networking_workers: [networking]
 
 # Where LPs gather. Rosc is raising, so this group comes first.
@@ -135,9 +135,29 @@ startup_hubs:
       nights, cohort showcases, investor panels and receptions. Skip workshops
       teaching founders the basics and events open only to residents.
 
+# City-wide event weeks (Boston Built Week, Tough Tech Week and the like),
+# whose partner events are spread across dozens of hosts no other source
+# covers. The search agent finds new weeks each run and records them in
+# `store`, so a week found once keeps being read until it ends. The `known`
+# weeks are read every run; their pages show nothing in range outside the week.
+event_weeks:
+  - id: weeks
+    name: Event week finder
+    fetch: weeks
+    store: data/boston/event_weeks.json
+    known:
+      - {name: Boston Built Week,   url: "https://bostonbuiltweek.com/"}         # Suffolk Technologies, mid-November
+      - {name: Tough Tech Week,     url: "https://luma.com/toughtechweek"}       # The Engine, late October
+      - {name: Boston Fintech Week, url: "https://bostonfintechweek.com/"}       # Fintech Sandbox, late September
+      - {name: Boston AI Week,      url: "https://aiweek.boston/schedule"}       # mid-September
+    focus: >
+      Also look for weeks run by MassRobotics, The Engine, Greentown Labs,
+      MassBio, MassTLC, NEVCA, Venture Café, CIC, the Boston Globe and the
+      universities, and for weeks in the rest of New England an investor
+      would travel to.
+
 networking:
   - {id: luma_bos,  name: Luma Boston,                  url: "https://luma.com/boston", fetch: luma}
-  - {id: ttw,       name: Tough Tech Week (Luma),       url: "https://luma.com/toughtechweek", fetch: luma}  # The Engine's week in late October; empty the rest of the year
   - {id: gtl,       name: Greentown Labs (Luma),        url: "https://luma.com/greentownlabs", fetch: luma}
   - {id: eb_vc,     name: Eventbrite (venture capital), url: "https://www.eventbrite.com/d/ma--boston/venture-capital/"}
   - {id: eb_inv,    name: Eventbrite (investing),       url: "https://www.eventbrite.com/d/ma--boston/investing/"}

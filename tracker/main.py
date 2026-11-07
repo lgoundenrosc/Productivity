@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 import yaml
 
-from . import digest, fetch, gov, llm, store
+from . import digest, fetch, gov, llm, store, weeks
 
 ROOT = Path(__file__).resolve().parent.parent
 ET = ZoneInfo("America/New_York")
@@ -26,9 +26,27 @@ GOV_WORKERS = ("hill", "industry")
 LONG_LEAD_TYPES = ("conference", "industry_day", "speaking_call")
 
 
+def expand_weeks(sources, profile, today, until, fetch_only, failures):
+    """Replaces each `fetch: weeks` source with one page source per live
+    event week (see tracker/weeks.py). A fetch-only run reads the weeks
+    already on file and the known ones without searching."""
+    out = []
+    for src in sources:
+        if src.get("fetch") != "weeks":
+            out.append(src)
+            continue
+        found = weeks.sources(src, profile["city"]["area"], today, until,
+                              search=not fetch_only, failures=failures)
+        if fetch_only:
+            print(f"  {src['name']}: {len(found)} event week calendars to read")
+        out += found
+    return out
+
+
 def scrape_group(sources, profile, today, until, fetch_only, networking=False):
     """One worker: each page gets its own extraction call."""
     events, failures = [], []
+    sources = expand_weeks(sources, profile, today, until, fetch_only, failures)
     for src in sources:
         try:
             if fetch_only and src.get("fetch") == "search":
@@ -189,7 +207,9 @@ def main():
 
     workers = cfg["workers"]
     covered = sorted({src["name"] for g in workers if g not in GOV_WORKERS
-                      for src in cfg.get(g, []) if src.get("fetch") != "search"})
+                      for src in cfg.get(g, []) if src.get("fetch") not in ("search", "weeks")}
+                     | {w["name"] for g in workers if g not in GOV_WORKERS
+                        for src in cfg.get(g, []) for w in src.get("known", [])})
     for src in cfg.get("general_search", []):
         src["focus"] = src["focus"].replace("{covered}", ", ".join(covered))
 

@@ -6,7 +6,7 @@
 # context holds every page. `hill` and `industry` read government APIs; every
 # other name is a group of sources below. `networking_workers` feed the
 # happy hours section.
-workers: [think_tanks_defense, think_tanks_tech_policy, other_orgs, networking,
+workers: [think_tanks_defense, think_tanks_tech_policy, other_orgs, event_weeks, networking,
           universities, military, general_search, hill, industry]
 networking_workers: [networking]
 
@@ -34,6 +34,14 @@ other_orgs:
 
 # Happy hours, meetups and founder/investor networking. This worker's
 # events get their own section in the digest.
+# City-wide event weeks and their partner calendars (see tracker/weeks.py).
+event_weeks:
+  - id: weeks
+    name: Event week finder
+    fetch: weeks
+    store: data/event_weeks.json
+    known: []
+
 networking:
   - {id: dtdc,      name: Defense Tech DC (Luma),       url: "https://luma.com/defense-tech-dc", fetch: luma}
   - {id: station,   name: STATION DC (Luma),            url: "https://luma.com/stationdc", fetch: luma}

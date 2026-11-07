@@ -9,7 +9,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # to commit data/boston/seen.json
+  contents: write   # to commit data/boston/seen.json and data/boston/event_weeks.json
 
 concurrency: weekly-digest-boston
 
@@ -33,11 +33,11 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           DIGEST_TO: ${{ secrets.BOSTON_DIGEST_TO || secrets.DIGEST_TO }}
         run: python -m tracker.main --city boston
-      - name: Save which events were already sent
+      - name: Save which events were already sent and the event weeks found
         run: |
           git config user.name "events-digest-bot"
           git config user.email "events-digest-bot@users.noreply.github.com"
-          git add data/boston/seen.json
+          for f in data/boston/seen.json data/boston/event_weeks.json; do [ -f "$f" ] && git add "$f"; done
           git diff --cached --quiet || git commit -m "Record events sent in this week's Boston digest"
           git pull --rebase  # the DC or London digest may have pushed first
           git push

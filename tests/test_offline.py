@@ -245,3 +245,73 @@ def test_london_puts_next_week_second():
     assert "Nov 2 to Nov 8" in sections[1] and "LP breakfast" in sections[1]
     assert "Next week (Nov 9 to Nov 15)" in sections[2] and "Family office dinner" in sections[2]
     assert "Allocator forum" in sections[3] and "Next week" not in digest.build(events, BOSTON, date(2026, 11, 2), [])
+
+
+def test_event_weeks_merge_and_expire():
+    from tracker import weeks
+    today = date(2026, 11, 7)
+    stored = [{"name": "Old Week", "organizer": "", "start": "2026-10-01", "end": "2026-10-05", "url": "https://old.example/"},
+              {"name": "Built Week", "organizer": "Suffolk", "start": "2026-11-15", "end": "2026-11-21",
+               "url": "https://bostonbuiltweek.com/"}]
+    found = [{"name": "Boston Built Week", "organizer": "Suffolk", "start": "2026-11-15", "end": "2026-11-21",
+              "url": "https://www.bostonbuiltweek.com"},  # same week, URL spelled differently
+             {"name": "Robot Week", "organizer": "MassRobotics", "start": "2026-11-30", "end": "2026-12-04",
+              "url": "https://robotweek.example/calendar"},
+             {"name": "No dates", "organizer": "", "start": "", "end": "", "url": "https://nodates.example/"},
+             {"name": "Too long", "organizer": "", "start": "2026-11-01", "end": "2027-03-01", "url": "https://long.example/"}]
+    merged = weeks.merge(stored, found, today)
+    assert [w["name"] for w in merged] == ["Boston Built Week", "Robot Week"]
+
+
+def test_event_weeks_become_page_sources(tmp_path, monkeypatch):
+    from tracker import weeks
+    monkeypatch.setattr(weeks, "ROOT", tmp_path)
+    weeks.save([{"name": "Robot Week", "organizer": "", "start": "2026-11-30", "end": "2026-12-04",
+                 "url": "https://lu.ma/robotweek"},
+                {"name": "Spring Week", "organizer": "", "start": "2027-05-01", "end": "2027-05-05",
+                 "url": "https://spring.example/"},
+                {"name": "Built Week again", "organizer": "", "start": "2026-11-15", "end": "2026-11-21",
+                 "url": "https://bostonbuiltweek.com"}], "data/w.json")
+    src = {"name": "Event week finder", "fetch": "weeks", "store": "data/w.json",
+           "known": [{"name": "Boston Built Week", "url": "https://bostonbuiltweek.com/"}]}
+    out = weeks.sources(src, "Boston", date(2026, 11, 7), date(2027, 3, 7), search=False)
+    assert [(s["name"], s["fetch"]) for s in out] == [("Boston Built Week", "auto"), ("Robot Week", "luma")]
+    assert len({s["id"] for s in out}) == len(out)
+
+
+def test_fetch_only_run_reads_stored_weeks_without_searching(monkeypatch):
+    from tracker import weeks
+    def no_search(*a, **k):
+        raise AssertionError("a fetch-only run must not call Claude")
+    monkeypatch.setattr(weeks, "discover", no_search)
+    cfg = yaml.safe_load(open("config/boston/sources.yaml"))
+    assert "event_weeks" in cfg["workers"]
+    failures = []
+    out = main.expand_weeks(cfg["event_weeks"], BOSTON, date(2026, 11, 7), date(2027, 3, 7), True, failures)
+    assert "Boston Built Week" in {s["name"] for s in out} and not failures
+    assert all(s["fetch"] != "weeks" for s in out)
+
+
+def test_auto_fetch_falls_back_to_browser(monkeypatch):
+    from tracker import fetch
+    calls = []
+    def fake(url, browser=False):
+        calls.append(browser)
+        return "<p>Loading</p>" if not browser else "<p>" + "Nov 17 Builders and Backers " * 100 + "</p>"
+    monkeypatch.setattr(fetch, "get_html", fake)
+    text = fetch.source_text({"url": "https://example.com/", "fetch": "auto"})
+    assert calls == [False, True] and "Builders and Backers" in text
+
+
+def test_failed_week_search_keeps_stored_weeks(tmp_path, monkeypatch):
+    from tracker import weeks
+    monkeypatch.setattr(weeks, "ROOT", tmp_path)
+    weeks.save([{"name": "Robot Week", "organizer": "", "start": "2026-11-30", "end": "2026-12-04",
+                 "url": "https://robotweek.example/"}], "data/w.json")
+    def boom(*a, **k):
+        raise RuntimeError("search failed")
+    monkeypatch.setattr(weeks, "discover", boom)
+    failures = []
+    out = weeks.sources({"name": "Event week finder", "store": "data/w.json"}, "Boston",
+                        date(2026, 11, 7), date(2027, 3, 7), failures=failures)
+    assert [s["name"] for s in out] == ["Robot Week"] and failures[0][0] == "Event week finder"
