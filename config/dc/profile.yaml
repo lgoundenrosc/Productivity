@@ -1,3 +1,11 @@
+# The city the digest covers. `area` goes into Claude's prompts.
+city:
+  name: DC
+  long_name: Washington
+  area: "the Washington, DC area (DC, Northern Virginia and suburban Maryland)"
+  local_label: Washington area
+  seen_file: data/seen.json
+
 # Who the digest is for. This text goes to Claude verbatim when scoring.
 reader: >
   Senior associate at a defense-focused pre-seed and seed venture fund in
@@ -55,9 +63,25 @@ categories:
 # Added to Claude's score so DC-area events you can walk into rank first.
 # Online-only events need a stronger topic to make the cut.
 location_bonus:
-  dc_in_person: 2
-  dc_hybrid: 1
+  local_in_person: 2
+  local_hybrid: 1
   online_only: -1
+
+# Told to Claude when it reads each events page.
+audience_note: >
+  Drop events aimed at a specific demographic or affinity group (for example
+  events for a particular race, gender or ethnicity), student-only events such
+  as admissions or career fairs, and purely social events.
+networking_note: >
+  This source is checked for networking. Keep happy hours, receptions, meetups,
+  founder and investor gatherings, demo days and pitch nights, above all ones
+  touching defense, national security, government tech, deep tech, space,
+  robotics, AI or venture. General DC venture capital, startup and investor
+  events count even with no defense angle. Drop purely social events (parties,
+  fitness, dating, hobbies) and events with no professional angle.
+scoring_note: >
+  Happy hours and receptions where defense tech founders, investors or
+  government buyers gather are valuable even without a program.
 
 min_score: 5        # events below this are dropped from the digest
 top_pick_score: 8   # events at or above this get a TOP PICK badge

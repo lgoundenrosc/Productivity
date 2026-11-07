@@ -2,8 +2,14 @@
 # reject plain HTTP clients. Sites behind Cloudflare/Incapsula challenges
 # (AUSA, Heritage, FDD, CSBA, Axios, NDIA) are left out on purpose; see README.
 
-# Each group runs as its own worker with its own Claude calls, so no one
-# context holds every page.
+# Workers run in parallel, each with its own Claude calls, so no one
+# context holds every page. `hill` and `industry` read government APIs; every
+# other name is a group of sources below. `networking_workers` feed the
+# happy hours section.
+workers: [think_tanks_defense, think_tanks_tech_policy, other_orgs, networking,
+          universities, military, general_search, hill, industry]
+networking_workers: [networking]
+
 think_tanks_defense:
   - {id: csis,      name: CSIS,                         url: "https://www.csis.org/events"}
   - {id: cnas,      name: CNAS,                         url: "https://www.cnas.org/events"}
@@ -16,7 +22,7 @@ think_tanks_defense:
 think_tanks_tech_policy:
   - {id: cset,      name: CSET (Georgetown),            url: "https://cset.georgetown.edu/events/"}
   - {id: scsp,      name: SCSP,                         url: "https://www.scsp.ai/events/"}
-  - {id: rand,      name: RAND,                         url: "https://www.rand.org/events.html", dc_only: true}
+  - {id: rand,      name: RAND,                         url: "https://www.rand.org/events.html", local_only: true}
   - {id: brookings, name: Brookings,                    url: "https://www.brookings.edu/events/"}
   - {id: carnegie,  name: Carnegie Endowment,           url: "https://carnegieendowment.org/events"}
 

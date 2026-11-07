@@ -1,0 +1,197 @@
+# London event sources. The digest is built around LP access first and
+# defence second: three workers look for allocators and two for defence. Pages that block automated access
+# (Campden Wealth, Markets Group, Spear's, Financial News, Sifted, Chatham
+# House, UCL) or don't list dates (Family Office Club, CFA Society UK) are
+# covered by the search agents instead.
+
+workers: [lp_finance, lp_private, lp_institutional, defence, defence_search, speaking,
+          investor_networks, universities, dealflow, networking, general_search]
+networking_workers: [networking]
+
+# Associations and conference organisers whose calendars list LP events.
+lp_finance:
+  - {id: ukpc,      name: UK Private Capital (BVCA),    url: "https://www.ukprivatecapital.co.uk/events/calendar.html"}
+  - {id: lbs_iepc,  name: LBS Institute of Entrepreneurship and Private Capital,
+     url: "https://www.london.edu/faculty-and-research/institute-of-entrepreneurship-and-private-capital/events"}
+  - {id: investeu,  name: Invest Europe,                url: "https://www.investeurope.eu/events/"}
+  - {id: pei,       name: Private Equity International, url: "https://www.privateequityinternational.com/events/"}
+  - {id: thecityuk, name: TheCityUK,                    url: "https://www.thecityuk.com/events/"}
+
+# Family offices, wealth managers and private banks.
+lp_private:
+  - id: family_office_search
+    name: Family office search agent
+    fetch: search
+    focus: >
+      Look for London events where family offices, wealth managers and
+      private banks gather and a venture fund manager can attend, apply,
+      speak or sponsor: Campden Wealth (the Campden Family Office Investment
+      Summit and European Families in Business events), the Family Office
+      Club, PAM Insight and Private Asset Managers awards and forums, Spear's,
+      Citywealth, WealthBriefing and Family Wealth Report events, the
+      Institute for Family Business, STEP London, Opal Group and Markets Group
+      family office forums, the London Family Office Forum, IFO, Private
+      Banker International, and family office dinners or breakfasts hosted
+      by banks, fund-of-funds or law firms (Macfarlanes, Withers, Travers
+      Smith, Mishcon de Reya and similar). Also note family office
+      conferences in Monaco, Geneva, Zurich and Paris in the next four
+      months.
+
+# Pensions, endowments, fund-of-funds, insurers and government investors.
+lp_institutional:
+  - id: institutional_search
+    name: Institutional LP search agent
+    fetch: search
+    focus: >
+      Look for London events where institutional limited partners speak or
+      gather: British Business Bank and British Patient Capital events, the
+      National Wealth Fund, the National Security Strategic Investment Fund,
+      the NATO Innovation Fund, Mansion House Compact and pension reform
+      events, Pensions UK (formerly the PLSA), the LGPS pools (Border to
+      Coast, LGPS Central, Local Pensions Partnership, London CIV, Brunel,
+      Wales Pension Partnership), IPE, Institutional Investor, Pensions Age,
+      Professional Pensions and Investment Week events, the Association of
+      Charitable Foundations and the Charity Investors' Group, university
+      endowment events, sovereign wealth fund panels, and fund-of-funds such
+      as Hamilton Lane, Adams Street, HarbourVest, Isomer Capital, Kernel,
+      Molten and Hambro Perks. Keep allocator panels, LP roundtables and
+      receptions. Also note major LP conferences in Europe in the next four
+      months (SuperReturn, SuperVenture, Invest Europe, IPE).
+  - id: emerging_manager_search
+    name: Emerging manager search agent
+    fetch: search
+    focus: >
+      Look for London events for emerging and first-time venture fund
+      managers where LPs attend: UK Private Capital emerging manager forums,
+      LP-GP breakfasts and speed-dating sessions, British Business Bank
+      Enterprise Capital Fund and Regional Angels Programme events,
+      fund-formation law firm seminars with LP panels (Travers Smith,
+      Kirkland, Goodwin, Taylor Wessing, Osborne Clarke, Orrick), placement
+      agent and fund-of-funds showcases, Diversity VC and Ventures Together
+      sessions open to all, Kauffman Fellows and Venture Capital Unlocked
+      London sessions, and Allocate or LP Insights events. Skip events that
+      sell fund administration or software to managers.
+
+# Calls for speakers and panelists. These have deadlines weeks ahead of the
+# event, which page scrapers miss.
+speaking:
+  - id: speaking_search
+    name: Speaker call search agent
+    fetch: search
+    focus: >
+      Look for open calls for speakers, panelists, moderators and pitch
+      judges at London or European events that LPs attend and a venture fund
+      GP could answer: UK Private Capital, Invest Europe, SuperVenture,
+      Campden Wealth, PEI, IPE, Sifted Summit, London Tech Week, Founders
+      Forum, Web Summit side events in London, LBS and Imperial investor
+      conferences, and defence and dual-use investment forums. For each call
+      give the event, its date, the application deadline and the link. Use
+      the deadline as the date.
+
+# Angel groups, syndicates and co-investors.
+investor_networks:
+  - {id: ukbaa,     name: UK Business Angels Association, url: "https://www.ukbaa.org.uk/events/"}
+  - id: network_search
+    name: Investor network search agent
+    fetch: search
+    focus: >
+      Look for public London events from investor networks and co-investors:
+      London Business Angels, Angel Investment Network, Cambridge Angels and
+      Oxford investor groups when they meet in London, Syndicate Room,
+      Seedrs and Crowdcube investor events, Envestors, Wealth Club and other
+      tax-efficient EIS/SEIS investor events (which draw HNW individuals),
+      TiE London, the UK-Israel Business, UK-India Business Council and
+      other diaspora investor networks, and corporate venture events. Keep
+      investor receptions, co-investment sessions and pitch meetings open to
+      guest investors.
+
+universities:
+  - {id: imperial,  name: Imperial College London events, url: "https://www.imperial.ac.uk/events/"}
+  - id: uni_search
+    name: University search agent
+    fetch: search
+    focus: >
+      Look for public London university events with investors or allocators
+      in the room: London Business School (the Private Equity and Venture
+      Capital Club conference, the Family Office Conference, Private Capital
+      Symposium), Imperial (Enterprise Lab, Imperial White City Incubator,
+      Imperial Venture Mentoring Service, the Imperial Fund), UCL Innovation
+      and Enterprise and UCL Business, King's College London Entrepreneurship
+      Institute, LSE Generate, Cass/Bayes Business School, and the Oxford and
+      Cambridge investor and endowment events held in London. Keep demo days,
+      investor panels and receptions. Skip lectures, admissions and
+      student-only events.
+
+# Defence, national security and space, where Rosc invests, and where
+# defence-minded LPs (NSSIF, the NATO Innovation Fund, family offices with
+# defence mandates) go. IISS, Chatham House and Policy Exchange block
+# automated access, so the search agents cover them.
+defence:
+  - {id: ads,       name: ADS Group,                    url: "https://www.adsgroup.org.uk/events/", local_only: true}
+  - {id: rusi,      name: RUSI,                         url: "https://www.rusi.org/events"}
+  - {id: geostrat,  name: Council on Geostrategy,       url: "https://www.geostrategy.org.uk/events/"}
+  - {id: eb_def,    name: Eventbrite (defence),         url: "https://www.eventbrite.co.uk/d/united-kingdom--london/defence/"}
+
+defence_search:
+  - id: defence_investor_search
+    name: Defence investor search agent
+    fetch: search
+    focus: >
+      Look for London defence, national security and dual-use investment
+      events with investors, LPs or fund managers in the room: NSSIF, the
+      NATO Innovation Fund and NATO DIANA, UK Defence Innovation (UKDI) and
+      DASA investor and industry days, British Business Bank defence and deep
+      tech events, City of London Corporation and Mansion House defence and
+      security finance events and scale-up showcases, UK Finance and bank or
+      law firm defence investment roundtables, defence VC events (Helsing,
+      Shield Capital, Plural and others with London teams), Defence Tech
+      London meetups, Resilience Media, PUBLIC's Defence Disrupted, Plexal,
+      and Luma and Eventbrite defence tech listings in London.
+  - id: defence_industry_search
+    name: Defence industry and policy search agent
+    fetch: search
+    focus: >
+      Look for in-person London defence, security and space events where
+      procurement leads, primes, policy makers and investors speak: IISS,
+      Chatham House, Policy Exchange, the Henry Jackson Society, King's
+      College London War Studies, LSE IDEAS, Imperial's Institute for
+      Security Science and Technology, the Royal Aeronautical Society,
+      UKspace and the Satellite Applications Catapult, techUK's defence and
+      national security programme, SMi Group and Defence iQ (IQPC) defence
+      conferences in London, and defence committee events open to the
+      public. Also note major European defence tech and defence investment
+      conferences in the next four months.
+
+# Startup deal flow outside defence.
+dealflow:
+  - id: dealflow_search
+    name: Deep tech deal flow search agent
+    fetch: search
+    focus: >
+      Look for London deep tech, robotics, space and hardware investor
+      events: Entrepreneur First, Founders Forum, Seedcamp, Antler and
+      Techstars London demo days, the Royal Academy of Engineering Enterprise
+      Hub, Plexal and Sifted events. Keep demo days, investor panels and
+      receptions. Skip software, fintech and consumer events with no
+      hardware or defence angle.
+
+networking:
+  - {id: luma_ldn,  name: Luma London,                  url: "https://luma.com/london", fetch: luma}
+  - {id: eb_vc,     name: Eventbrite (venture capital), url: "https://www.eventbrite.co.uk/d/united-kingdom--london/venture-capital/"}
+  - {id: eb_fo,     name: Eventbrite (family office),   url: "https://www.eventbrite.co.uk/d/united-kingdom--london/family-office/"}
+  - {id: eb_inv,    name: Eventbrite (investing),       url: "https://www.eventbrite.co.uk/d/united-kingdom--london/investing/"}
+
+# A general sweep for anything the named sources miss.
+general_search:
+  - id: gen_search
+    name: General search agent
+    fetch: search
+    focus: >
+      Look for Greater London events a pre-seed and seed venture GP who is
+      raising a fund would want to attend, above all where limited partners
+      gather: family office and wealth manager events, allocator dinners and
+      breakfasts, fund-of-funds and placement agent receptions, emerging
+      manager forums, and Financial News, City AM, Sifted or Private Equity
+      News investor events. Concentrate on the next three weeks; for major
+      conferences, look up to four months out. Skip events hosted by these
+      organizations, which are already covered: {covered}.

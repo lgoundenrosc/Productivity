@@ -7,7 +7,9 @@ import yaml
 
 from tracker import digest, gov, main, store
 
-PROFILE = yaml.safe_load(open("config/profile.yaml"))
+PROFILE = yaml.safe_load(open("config/dc/profile.yaml"))
+BOSTON = yaml.safe_load(open("config/boston/profile.yaml"))
+LONDON = yaml.safe_load(open("config/london/profile.yaml"))
 
 
 def ev(**kw):
@@ -92,7 +94,7 @@ def test_format_badges_and_in_person_first():
 def test_this_week_networking_and_travel_sections():
     events = [ev(title="CSIS panel tomorrow", date="2026-10-20"),
               ev(title="Defense Tech DC happy hour", date="2026-10-27", event_type="networking", category="venture"),
-              ev(title="Spark Tank in Chicago", date="2026-11-02", event_type="industry_day", dc_area=False,
+              ev(title="Spark Tank in Chicago", date="2026-11-02", event_type="industry_day", local=False,
                  location="Chicago, IL"),
               ev(title="Later DC panel", date="2026-11-05")]
     html = digest.build(events, PROFILE, date(2026, 10, 19), [])
@@ -109,9 +111,9 @@ def test_place_rules():
     today, local_until = date(2026, 10, 19), date(2026, 11, 9)
     dc = ev(score=6)
     assert main.place(dc, today, local_until, b) and dc["score"] == 8
-    away_talk = ev(dc_area=False, event_type="talk")
+    away_talk = ev(local=False, event_type="talk")
     assert not main.place(away_talk, today, local_until, b)
-    away_conf = ev(dc_area=False, event_type="conference", date="2027-01-15", score=6)
+    away_conf = ev(local=False, event_type="conference", date="2027-01-15", score=6)
     assert main.place(away_conf, today, local_until, b) and away_conf["score"] == 6
     far_talk = ev(date="2026-12-15", event_type="talk")
     assert not main.place(far_talk, today, local_until, b)
@@ -121,11 +123,11 @@ def test_place_rules():
 
 def test_networking_is_dc_or_online():
     b, today, until = PROFILE["location_bonus"], date(2026, 10, 19), date(2026, 11, 9)
-    assert main.place(ev(event_type="networking", worker="networking"), today, until, b)
+    assert main.place(ev(event_type="networking", networking_source=True), today, until, b)
     online = ev(event_type="networking", format="virtual", score=6)
     assert main.place(online, today, until, b) and online["score"] == 5
-    assert not main.place(ev(event_type="networking", dc_area=False), today, until, b)
-    assert not main.place(ev(worker="networking", event_type="industry_day", dc_area=False), today, until, b)
+    assert not main.place(ev(event_type="networking", local=False), today, until, b)
+    assert not main.place(ev(networking_source=True, event_type="industry_day", local=False), today, until, b)
 
 
 def test_localist_keyword_filter(monkeypatch):
@@ -150,7 +152,7 @@ def test_search_agent_resumes_after_pause(monkeypatch):
     done = mock.Mock(stop_reason="end_turn", content=[text])
     fake = mock.Mock(); fake.beta.messages.create.side_effect = [paused, done]
     monkeypatch.setattr(llm, "client", lambda: fake)
-    assert llm.search_text("focus", date(2026, 10, 19), date(2026, 11, 9)) == "Event A | Oct 22"
+    assert llm.search_text("focus", date(2026, 10, 19), date(2026, 11, 9), "Greater Boston") == "Event A | Oct 22"
     second_call = fake.beta.messages.create.call_args_list[1].kwargs
     assert second_call["messages"][-1]["role"] == "assistant"
 
@@ -159,3 +161,87 @@ def test_skip_ranges():
     skips = [(date(2026, 11, 10), date(2026, 11, 14))]
     assert main.skipped(ev(date="2026-11-12"), skips)
     assert not main.skipped(ev(date="2026-11-15"), skips)
+
+
+def test_city_configs_are_complete():
+    for city in ("dc", "boston", "london"):
+        cfg = yaml.safe_load(open(f"config/{city}/sources.yaml"))
+        profile = yaml.safe_load(open(f"config/{city}/profile.yaml"))
+        assert {"name", "long_name", "area", "local_label", "seen_file"} <= set(profile["city"])
+        for w in cfg["workers"]:
+            assert w in main.GOV_WORKERS or cfg[w], f"{city}: worker {w} has no sources"
+    assert "aibio" not in {c["id"] for c in BOSTON["categories"]}
+    assert BOSTON["categories"][0]["id"] == "lp"
+
+
+def test_boston_digest_puts_receptions_under_topics():
+    events = [ev(title="Family office dinner", date="2026-10-29", event_type="networking", category="lp",
+                 networking_source=True, location="Boston, MA"),
+              ev(title="Judges wanted for MIT $100K", date="2026-12-01", event_type="speaking_call",
+                 category="speaking")]
+    html = digest.build(events, BOSTON, date(2026, 10, 19), [])
+    assert "Boston events: week of" in html and "Happy hours" not in html
+    lp = html.split("LP access")[1]
+    assert "Family office dinner" in lp
+    b, today, until = BOSTON["location_bonus"], date(2026, 10, 19), date(2026, 11, 9)
+    assert main.place(events[1], today, until, b)  # a speaker call due after three weeks stays
+
+
+def test_same_day_events_sort_by_clock_time():
+    events = [ev(title="Evening dinner", start_time="6:00 PM ET"), ev(title="Morning summit", start_time="8:30 AM ET")]
+    html = digest.build(events, PROFILE, date(2026, 10, 19), [])
+    assert html.index("Morning summit") < html.index("Evening dinner")
+
+
+def test_this_week_ends_on_sunday():
+    events = [ev(title="Saturday demo day", date="2026-10-24"), ev(title="Monday summit", date="2026-10-26")]
+    html = digest.build(events, BOSTON, date(2026, 10, 22), [])  # a Thursday
+    this_week = html.split("<h2")[1]
+    assert "Oct 22 to Oct 25" in this_week
+    assert "Saturday demo day" in this_week and "Monday summit" not in this_week
+
+
+def test_boston_sends_every_other_monday():
+    assert main.send_week(BOSTON, date(2026, 11, 2))
+    assert not main.send_week(BOSTON, date(2026, 11, 9))
+    assert main.send_week(BOSTON, date(2026, 11, 16))
+    assert main.send_week(PROFILE, date(2026, 11, 9))  # DC stays weekly
+
+
+def test_london_uses_uk_time():
+    assert main.city_tz(LONDON).key == "Europe/London"
+    q = parse_qs(urlparse(digest.calendar_link(ev(start_time="6:30 PM UK time"), "Europe/London")).query)
+    assert q["ctz"] == ["Europe/London"] and q["dates"][0].endswith("T183000/20261022T200000")
+    html = digest.build([ev(category="lp_private", location="Mayfair, London")], LONDON, date(2026, 10, 19), [])
+    assert "ctz=Europe%2FLondon" in html
+
+
+def test_london_schedule_guard(monkeypatch):
+    real = main.intended_slot_ok.__globals__["datetime"]
+    tz = main.city_tz(LONDON)
+    with mock.patch.object(main, "datetime") as dt:
+        monkeypatch.setenv("GITHUB_EVENT_SCHEDULE", "50 5 * * 1")
+        dt.now.return_value = real(2026, 10, 19, 6, 0, tzinfo=main.timezone.utc)  # BST: slot is 6:50
+        assert main.intended_slot_ok(tz)
+        dt.now.return_value = real(2026, 11, 9, 6, 0, tzinfo=main.timezone.utc)   # GMT: slot is 5:50
+        assert not main.intended_slot_ok(tz)
+        monkeypatch.setenv("GITHUB_EVENT_SCHEDULE", "50 6 * * 1")
+        dt.now.return_value = real(2026, 11, 9, 7, 0, tzinfo=main.timezone.utc)   # GMT: slot is 6:50
+        assert main.intended_slot_ok(tz)
+
+
+def test_london_alternates_with_boston():
+    for monday in (date(2026, 11, 2), date(2026, 11, 9), date(2026, 11, 16), date(2026, 11, 23)):
+        assert main.send_week(BOSTON, monday) != main.send_week(LONDON, monday)
+    assert LONDON["categories"][0]["id"].startswith("lp")
+
+
+def test_london_puts_next_week_second():
+    events = [ev(title="LP breakfast", date="2026-11-05", category="lp_inst"),
+              ev(title="Family office dinner", date="2026-11-11", category="lp_private"),
+              ev(title="Allocator forum", date="2026-11-19", category="lp_inst")]
+    html = digest.build(events, LONDON, date(2026, 11, 2), [])
+    sections = html.split("<h2")
+    assert "Nov 2 to Nov 8" in sections[1] and "LP breakfast" in sections[1]
+    assert "Next week (Nov 9 to Nov 15)" in sections[2] and "Family office dinner" in sections[2]
+    assert "Allocator forum" in sections[3] and "Next week" not in digest.build(events, BOSTON, date(2026, 11, 2), [])

@@ -1,8 +1,10 @@
-"""Weekly DC events digest.
+"""Weekly events digest for one city (config/<city>/).
 
-    python -m tracker.main --dry-run      # build out/digest.html, send nothing
-    python -m tracker.main --fetch-only   # check every source loads, no Claude calls
-    python -m tracker.main                # full run: email the digest, update data/seen.json
+    python -m tracker.main --dry-run               # build out/digest.html, send nothing
+    python -m tracker.main --fetch-only            # check every source loads, no Claude calls
+    python -m tracker.main                         # full run: email the DC digest, update seen events
+    python -m tracker.main --city boston --test    # email a test Boston digest, record nothing
+    python -m tracker.main --city london --dry-run # the London LP digest
 """
 import argparse
 import os
@@ -19,12 +21,12 @@ from . import digest, fetch, gov, llm, store
 
 ROOT = Path(__file__).resolve().parent.parent
 ET = ZoneInfo("America/New_York")
-PAGE_GROUPS = ["think_tanks_defense", "think_tanks_tech_policy", "other_orgs", "networking",
-               "universities", "military", "general_search"]
-TRAVEL_TYPES = ("conference", "industry_day")
+GOV_WORKERS = ("hill", "industry")
+# Event types kept up to travel_lookahead_days out instead of lookahead_days.
+LONG_LEAD_TYPES = ("conference", "industry_day", "speaking_call")
 
 
-def scrape_group(sources, today, until, fetch_only, networking=False):
+def scrape_group(sources, profile, today, until, fetch_only, networking=False):
     """One worker: each page gets its own extraction call."""
     events, failures = [], []
     for src in sources:
@@ -32,12 +34,14 @@ def scrape_group(sources, today, until, fetch_only, networking=False):
             if fetch_only and src.get("fetch") == "search":
                 print(f"  {src['name']}: search agent (needs ANTHROPIC_API_KEY; skipped)")
                 continue
-            text = fetch.source_text(src, today, until)
+            text = fetch.source_text(src, today, until, profile["city"]["area"],
+                                     tz=profile["city"].get("timezone", "America/New_York"),
+                                     tz_label=profile["city"].get("tz_label", "ET"))
             if fetch_only:
                 print(f"  {src['name']}: {len(text):,} chars of text")
                 continue
-            found = llm.extract_events(src["name"], text, today, until,
-                                       src.get("dc_only", False), networking)
+            found = llm.extract_events(src["name"], text, today, until, profile,
+                                       src.get("local_only", False), networking)
             if not found:
                 failures.append((src["name"], "page loaded but no upcoming events were found"))
             for e in found:
@@ -68,11 +72,11 @@ def gov_worker(kind, cfg, today, until, fetch_only):
 
 
 def run_worker(name, cfg, profile, today, until, fetch_only):
-    if name in PAGE_GROUPS:
-        events, failures = scrape_group(cfg[name], today, until, fetch_only,
-                                        networking=name == "networking")
-    else:
+    if name in GOV_WORKERS:
         events, failures = gov_worker(name, cfg, today, until, fetch_only)
+    else:
+        events, failures = scrape_group(cfg[name], profile, today, until, fetch_only,
+                                        networking=name in cfg.get("networking_workers", []))
     if events and not fetch_only:
         try:
             llm.score_events(events, profile)
@@ -82,26 +86,27 @@ def run_worker(name, cfg, profile, today, until, fetch_only):
 
 
 def place(e, today, local_until, bonus):
-    """Applies the DC bonus and decides whether an event stays in the digest.
-    Local events are kept for three weeks; conferences and industry days, and
-    anything outside DC, only if they are worth planning or traveling for."""
+    """Applies the local bonus and decides whether an event stays in the digest.
+    Local events are kept for three weeks; conferences, industry days and calls
+    for speakers, and anything out of town, only if they are worth planning or
+    traveling for."""
     if e["kind"] != "event":
         return True
-    fmt, dc = e.get("format", "unknown"), e.get("dc_area", True)
-    if e.get("worker") == "networking" or e.get("event_type") == "networking":
-        if not dc and fmt != "virtual":
+    fmt, local = e.get("format", "unknown"), e.get("local", True)
+    if e.get("networking_source") or e.get("event_type") == "networking":
+        if not local and fmt != "virtual":
             return False  # an out-of-town happy hour; online ones stay, ranked lower
-    travel_type = e.get("event_type") in TRAVEL_TYPES
-    if not dc and fmt != "virtual" and not travel_type:
+    long_lead = e.get("event_type") in LONG_LEAD_TYPES
+    if not local and fmt != "virtual" and not long_lead:
         return False  # an out-of-town talk or happy hour
-    if date.fromisoformat(e["date"]) > local_until and not travel_type:
+    if date.fromisoformat(e["date"]) > local_until and not long_lead:
         return False
     if fmt == "virtual":
         delta = bonus.get("online_only", 0)
-    elif dc and fmt == "in-person":
-        delta = bonus.get("dc_in_person", 0)
-    elif dc and fmt == "hybrid":
-        delta = bonus.get("dc_hybrid", 0)
+    elif local and fmt == "in-person":
+        delta = bonus.get("local_in_person", 0)
+    elif local and fmt == "hybrid":
+        delta = bonus.get("local_hybrid", 0)
     else:
         delta = 0
     if "score" in e:
@@ -114,10 +119,15 @@ def skipped(e, skips):
     return any(a <= d <= b for a, b in skips)
 
 
-def intended_slot_ok():
-    """The workflow fires at 10:50 and 11:50 UTC on Mondays. Only the run
-    scheduled for 6:50 ET goes ahead, so the email lands near 7:00 in both
-    EDT and EST, even when GitHub starts the job late."""
+def city_tz(profile):
+    return ZoneInfo(profile["city"].get("timezone", "America/New_York"))
+
+
+def intended_slot_ok(tz=ET):
+    """Each workflow fires twice on Mondays, an hour apart in UTC (DC and
+    Boston at 10:50 and 11:50, London at 5:50 and 6:50). Only the run
+    scheduled for 6:50 local time goes ahead, so the email lands near 7:00
+    in summer and winter time, even when GitHub starts the job late."""
     cron = os.environ.get("GITHUB_EVENT_SCHEDULE")
     if not cron:
         return True
@@ -126,7 +136,18 @@ def intended_slot_ok():
     slot = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if slot > now:
         slot -= timedelta(days=1)
-    return slot.astimezone(ET).hour == 6
+    return slot.astimezone(tz).hour == 6
+
+
+def send_week(profile, today):
+    """True when a scheduled run should send. A profile can set
+    send_every_weeks (default 1) and first_send, a Monday that anchors the
+    cycle, so a fortnightly digest skips every other Monday."""
+    every = profile.get("send_every_weeks", 1)
+    if every <= 1:
+        return True
+    first = date.fromisoformat(str(profile["first_send"]))
+    return (today - first).days // 7 % every == 0
 
 
 def main():
@@ -134,28 +155,44 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="write out/digest.html instead of emailing")
     ap.add_argument("--fetch-only", action="store_true", help="load sources without calling Claude")
     ap.add_argument("--only", help="comma-separated worker names, e.g. hill,other_orgs")
+    ap.add_argument("--city", default="dc", help="config folder under config/: dc, boston or london")
+    ap.add_argument("--test", action="store_true",
+                    help="email the digest marked as a test and leave the seen-events record alone")
     ap.add_argument("--start", help="first day of the digest window (YYYY-MM-DD); default today")
     ap.add_argument("--skip", action="append", default=[],
                     help="leave out events in a date range, FROM:TO (YYYY-MM-DD), repeatable")
     args = ap.parse_args()
 
-    if not intended_slot_ok():
-        print("Not the 7am ET slot this week (daylight saving offset); exiting.")
+    cfg = yaml.safe_load((ROOT / "config" / args.city / "sources.yaml").read_text())
+    profile = yaml.safe_load((ROOT / "config" / args.city / "profile.yaml").read_text())
+    city, tz = profile["city"], city_tz(profile)
+    if not intended_slot_ok(tz):
+        print("Not the 7am local slot this week (daylight saving offset); exiting.")
         return 0
 
-    cfg = yaml.safe_load((ROOT / "config/sources.yaml").read_text())
-    profile = yaml.safe_load((ROOT / "config/profile.yaml").read_text())
-    today = date.fromisoformat(args.start) if args.start else datetime.now(ET).date()
+    needed = [] if args.fetch_only else ["ANTHROPIC_API_KEY"]
+    if not (args.fetch_only or args.dry_run):
+        needed += ["GMAIL_ADDRESS", "GMAIL_APP_PASSWORD"]
+    missing = [k for k in needed if not os.environ.get(k)]
+    if missing:
+        print(f"Missing {', '.join(missing)}. Add them as repository secrets "
+              "(Settings > Secrets and variables > Actions); see the README.")
+        return 1
+
+    if os.environ.get("GITHUB_EVENT_SCHEDULE") and not send_week(profile, datetime.now(tz).date()):
+        print(f"{city['name']} digest goes out every {profile['send_every_weeks']} weeks; not this week.")
+        return 0
+    today = date.fromisoformat(args.start) if args.start else datetime.now(tz).date()
     skips = [tuple(date.fromisoformat(d) for d in r.split(":")) for r in args.skip]
     local_until = today + timedelta(days=profile["lookahead_days"])
     until = today + timedelta(days=profile["travel_lookahead_days"])
 
-    covered = sorted({src["name"] for g in PAGE_GROUPS for src in cfg.get(g, [])
-                      if src.get("fetch") != "search"})
+    workers = cfg["workers"]
+    covered = sorted({src["name"] for g in workers if g not in GOV_WORKERS
+                      for src in cfg.get(g, []) if src.get("fetch") != "search"})
     for src in cfg.get("general_search", []):
         src["focus"] = src["focus"].replace("{covered}", ", ".join(covered))
 
-    workers = PAGE_GROUPS + ["hill", "industry"]
     if args.only:
         workers = [w for w in workers if w in args.only.split(",")]
     with ThreadPoolExecutor(len(workers)) as pool:
@@ -167,12 +204,13 @@ def main():
                 print(f"  FAILED {name}: {msg}")
         return 0
 
-    seen = store.load()
+    seen = store.load(city["seen_file"])
     events, failures, ids = [], [], set()
     for (evs, fails), worker in zip(results, workers):
         failures += fails
         for e in evs:
             e["worker"] = worker
+            e["networking_source"] = worker in cfg.get("networking_workers", [])
             eid = store.event_id(e)
             if eid in ids:
                 continue  # co-hosted event listed by two sources
@@ -193,10 +231,14 @@ def main():
         return 0
 
     from . import mailer
-    mailer.send(f"DC events: week of {today:%b} {today.day}", body)
+    subject = f"{city['name']} events: week of {today:%b} {today.day}"
+    mailer.send(f"Test: {subject}" if args.test else subject, body)
+    if args.test:
+        print(f"Sent test digest with {len(events)} events; {len(failures)} failures")
+        return 0
     for e in events:
         seen.setdefault(store.event_id(e), today.isoformat())
-    store.save(seen, today)
+    store.save(seen, today, city["seen_file"])
     print(f"Sent digest with {len(events)} events; {len(failures)} failures")
     return 0
 

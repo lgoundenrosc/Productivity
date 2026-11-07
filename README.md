@@ -1,9 +1,14 @@
-# DC events tracker
+# Events trackers: DC, Boston and London
+
+Three digests share this code. Each city has its own folder under
+`config/` (`profile.yaml` for the reader and scoring, `sources.yaml` for the
+workers) and its own workflow. The DC digest is described first; the Boston and
+London digests are under [Boston](#boston) and [London](#london) below.
 
 Every Monday at about 7am ET this emails a digest of upcoming DC events worth
 attending: think tank panels, defense and space industry events, congressional
 hearings, and federal industry days. Claude reads each events page, pulls out
-the events, scores each one against `config/profile.yaml`, and groups them by
+the events, scores each one against `config/dc/profile.yaml`, and groups them by
 topic. Every event is labeled IN PERSON, HYBRID, ONLINE ONLY or FORMAT NOT
 LISTED. In-person events get a one-point score bonus and are listed first in
 each section; online-only events lose a point. Each event has an "Add to calendar" link that opens it prefilled in
@@ -26,18 +31,87 @@ call has to hold every page:
 | `universities` | GWU calendar API, plus a search agent for Georgetown, SAIS, the Bush School in DC, GW, GMU, UMD and UVA startup events | API and Claude web search |
 | `military` | Search agent for DIU, CDAO, OSC, AFWERX, SpaceWERX, Army, Navy, Space Force, DTRA and other DoD events | Claude web search |
 | `general_search` | Search agent for anything the named sources miss | Claude web search |
-| `hill` | Congress.gov committee meetings, filtered to the committees in `config/sources.yaml` | API |
+| `hill` | Congress.gov committee meetings, filtered to the committees in `config/dc/sources.yaml` | API |
 | `industry` | SAM.gov special notices titled "industry day" or "proposers day" | API |
 
 Search agents use Claude's web search and page-fetch tools, then the same
 extraction step as the page scrapers. Networking events aimed at affinity
 groups, student-only and members-only events are filtered out or scored down.
 Each worker then scores its own events. Events seen in an earlier digest are
-recorded in `data/seen.json`, which the workflow commits back, so new ones get
+recorded in `data/seen.json` (Boston and London: `data/<city>/seen.json`), which the workflow commits back, so new ones get
 a NEW tag. Any source that fails is listed at the bottom of the email.
 
 AUSA, Heritage, FDD, CSBA, Axios and NDIA block automated access with
 Cloudflare or Incapsula challenges, so they aren't scraped.
+
+## Boston
+
+The Boston digest (`config/boston/`, `.github/workflows/weekly-digest-boston.yml`)
+is written for a GP at Rosc while the fund is raising. Its sections are sorted
+by purpose instead of topic: LP access first, then speaking and judging slots,
+deal flow, investor networks, receptions, and other talks. A call for speakers
+or judges is listed under its application deadline. Investor networks built
+around a community or diaspora (BIIG, NEIBC, TiE Boston) are kept, which the
+DC profile would filter out. There's no biosecurity section and no Congress or
+SAM.gov worker.
+
+| Worker | Sources | Method |
+|---|---|---|
+| `lp_finance` | Boston Fed, plus a search agent for family office and allocator events, CFA Society Boston, ACG Boston, Boston Economic Club, Mass PRIM board meetings and LP conferences | page text and Claude web search |
+| `investor_networks` | NEVCA (Luma), New England-Israel Business Council, plus a search agent for BIIG, TiE Boston and the angel groups | Luma, headless browser, web search |
+| `speaking` | Search agent for open calls for speakers, panelists, pitch judges and mentors | Claude web search |
+| `harvard` | Harvard Kennedy School, Belfer Center, Harvard Gazette, plus a search agent for the Innovation Labs, HBS, OTD, Harvard Grid, Wyss and others | page text and web search |
+| `mit` | Martin Trust Center, MIT events calendar API, plus a search agent for The Engine, Sloan conferences, VMS, Deshpande, ILP and others | browser, Localist API, web search |
+| `universities` | Northeastern calendar API, BU Questrom, plus a search agent for Babson, Tufts, BC, Brandeis, WPI and UMass Lowell | Localist API, page text, web search |
+| `startup_hubs` | Venture Café Cambridge, MassRobotics, MassTLC, LabCentral, MassChallenge, plus a search agent for CIC, Greentown Labs, Techstars, The Engine and others | page text and web search |
+| `networking` | Luma Boston and Eventbrite searches | Luma and page text |
+| `general_search` | Anything the named sources miss | Claude web search |
+
+Harvard Innovation Labs, Greentown Labs, TiE Boston, Startup Boston and CFA
+Society Boston block automated access, and BIIG, The Engine and CIC don't
+list dates on their events pages, so the search agents cover them.
+
+Boston uses the same secrets except the Congress and SAM.gov keys. Add
+`BOSTON_DIGEST_TO` to send it somewhere other than `DIGEST_TO`. To send a test
+by hand: Actions > Weekly Boston events digest > Run workflow, or locally
+`python -m tracker.main --city boston --test`, which marks the subject as a
+test and doesn't record events as seen.
+
+## London
+
+The London digest (`config/london/`, `.github/workflows/weekly-digest-london.yml`)
+is the Boston digest pointed at UK and European limited partners. It's for a
+Rosc GP raising the next fund, so LP access dominates the scoring: an event
+with allocators in the room scores 7 or more, and one full of founders rarely
+clears 6. Defence comes second: defence investor events score 8 or more,
+and software or general tech events with no defence, security, space or
+hardware angle score 4 or less. The next two weeks lead the email, each in
+its own section. Sections then run family offices and wealth managers,
+pensions, endowments, fund-of-funds and government investors, defence and
+national security, emerging manager and LP-GP forums, speaking slots, co-investors, deal flow, receptions
+and talks. Times, calendar links and the 7am send slot use UK time. It goes
+out every other Monday from Nov 9, 2026, so it alternates with Boston.
+
+| Worker | Sources | Method |
+|---|---|---|
+| `lp_finance` | UK Private Capital (the former BVCA), the LBS Institute of Entrepreneurship and Private Capital, Invest Europe, PEI, TheCityUK | page text, Claude extracts |
+| `lp_private` | Search agent for Campden Wealth, the Family Office Club, PAM Insight, Spear's, Citywealth, Opal and Markets Group forums, and bank and law firm family office dinners | Claude web search |
+| `lp_institutional` | Search agents for the British Business Bank, NSSIF, the NATO Innovation Fund, Pensions UK, the LGPS pools, IPE, endowments and fund-of-funds, plus emerging manager and LP-GP events | Claude web search |
+| `speaking` | Search agent for open calls for speakers and panelists at events LPs attend | Claude web search |
+| `investor_networks` | UK Business Angels Association, plus a search agent for angel groups, EIS investor events and diaspora networks | page text and web search |
+| `universities` | Imperial events, plus a search agent for LBS, UCL, KCL, LSE Generate and Bayes | page text and web search |
+| `defence` | ADS Group, RUSI, Council on Geostrategy, Eventbrite (defence) | page text, Claude extracts |
+| `defence_search` | Search agents for defence investor events (NSSIF, NATO Innovation Fund, DIANA, UKDI, DASA, City of London defence finance, defence VCs) and for defence industry and policy events (IISS, Chatham House, Policy Exchange, KCL, SMi, Defence iQ) | Claude web search |
+| `dealflow` | Search agent for deep tech, robotics, space and hardware demo days | Claude web search |
+| `networking` | Luma London and Eventbrite searches (venture capital, family office, investing) | Luma and page text |
+| `general_search` | Anything the named sources miss | Claude web search |
+
+Campden Wealth, Markets Group, Spear's, Financial News, Sifted, Chatham
+House, IISS, Policy Exchange and UCL block automated access, and the Family Office Club and CFA
+Society UK don't list dates, so the search agents cover them. Add
+`LONDON_DIGEST_TO` to send it somewhere other than `DIGEST_TO`. To send a
+test: Actions > Weekly London LP events digest > Run workflow, or locally
+`python -m tracker.main --city london --test`.
 
 ## Setup: secrets
 
@@ -62,6 +136,8 @@ python -m tracker.main --fetch-only          # check every source loads; no Clau
 python -m tracker.main --dry-run             # write out/digest.html; sends nothing
 python -m tracker.main --only hill,industry  # run some workers only
 python -m tracker.main --start 2026-11-02 --skip 2026-11-10:2026-11-14  # custom window, skip dates
+python -m tracker.main --city boston --dry-run  # the Boston digest
+python -m tracker.main --city london --dry-run  # the London LP digest
 python -m pytest tests                       # offline tests
 ```
 
@@ -69,8 +145,9 @@ To trigger a real send from GitHub: Actions > Weekly DC events digest > Run work
 
 ## Tuning
 
-- `config/profile.yaml`: interests, what to score up or down, the categories,
+- `config/<city>/profile.yaml`: the city and its timezone (default US Eastern), the reader, interests, what to score up or down, the categories,
   the in-person bonus (`format_bonus`), the score cutoff and how far ahead to look.
-- `config/sources.yaml`: sources, worker groups, the committee filter and the
+- `config/<city>/sources.yaml`: the worker list, sources, the committee filter and the
   SAM.gov phrases.
+- `send_every_weeks` and `first_send` in a profile: send every N weeks (Boston: every other Monday from Nov 2, 2026; London: the Mondays in between).
 - `TRACKER_MODEL` env var: the Claude model (default `claude-sonnet-5-5`).
