@@ -26,7 +26,7 @@ call has to hold every page:
 |---|---|---|
 | `think_tanks_defense` | CSIS, CNAS, Hudson, Atlantic Council, AEI, Mitchell, Reagan Institute | page text, Claude extracts |
 | `think_tanks_tech_policy` | CSET, SCSP, RAND (DC only), Brookings, Carnegie | page text, Claude extracts |
-| `other_orgs` | SpaceNews and DARPA (headless browser), AFCEA, Potomac Officers Club | page text, Claude extracts |
+| `other_orgs` | SpaceNews and DARPA (headless browser), AFCEA, Potomac Officers Club, BENS (headless browser, DC-area events only) | page text, Claude extracts |
 | `networking` | Defense Tech DC, STATION DC and Luma DC calendars, Silicon Nation newsletter, Meetup and Eventbrite searches | happy hours, meetups and VC/investor events |
 | `universities` | GWU calendar API, plus a search agent for Georgetown, SAIS, the Bush School in DC, GW, GMU, UMD and UVA startup events | API and Claude web search |
 | `military` | Search agent for DIU, CDAO, OSC, AFWERX, SpaceWERX, Army, Navy, Space Force, DTRA and other DoD events | Claude web search |
@@ -75,7 +75,7 @@ SAM.gov worker.
 
 | Worker | Sources | Method |
 |---|---|---|
-| `lp_finance` | Boston Fed, plus a search agent for family office and allocator events, CFA Society Boston, ACG Boston, Boston Economic Club, Mass PRIM board meetings and LP conferences | page text and Claude web search |
+| `lp_finance` | Boston Fed, BENS (headless browser, Boston-area events only), plus a search agent for family office and allocator events, CFA Society Boston, ACG Boston, Boston Economic Club, Mass PRIM board meetings and LP conferences | page text and Claude web search |
 | `investor_networks` | NEVCA (Luma), New England-Israel Business Council, plus a search agent for BIIG, TiE Boston and the angel groups | Luma, headless browser, web search |
 | `speaking` | Search agent for open calls for speakers, panelists, pitch judges and mentors | Claude web search |
 | `harvard` | Harvard Kennedy School, Belfer Center, Harvard Gazette, plus a search agent for the Innovation Labs, HBS, OTD, Harvard Grid, Wyss and others | page text and web search |

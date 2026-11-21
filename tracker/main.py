@@ -59,8 +59,11 @@ def scrape_group(sources, profile, today, until, fetch_only, networking=False):
                 print(f"  {src['name']}: {len(text):,} chars of text")
                 continue
             found = llm.extract_events(src["name"], text, today, until, profile,
-                                       src.get("local_only", False), networking)
-            if not found:
+                                       src.get("local_only", False), networking,
+                                       src.get("note", ""))
+            # A national calendar (`sparse: true`) often has nothing local
+            # in range, which is normal and not worth a line in the email.
+            if not found and not src.get("sparse"):
                 failures.append((src["name"], "page loaded but no upcoming events were found"))
             for e in found:
                 if e.get("date") and today.isoformat() <= e["date"] <= until.isoformat():

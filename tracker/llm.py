@@ -67,11 +67,14 @@ def event_schema(area, tz_label="ET"):
     })}})
 
 
-def extract_events(source_name, text, today, until, profile, local_only=False, networking=False):
+def extract_events(source_name, text, today, until, profile, local_only=False, networking=False,
+                   note=""):
     area = profile["city"]["area"]
     where = (f"Keep only events held in {area} or online; "
              "drop events in other cities. " if local_only else "")
     where += profile.get("audience_note", "").strip() + " "
+    if note:
+        where += note.strip() + " "
     if networking:
         where += profile.get("networking_note", "").strip() + " "
     prompt = f"""Below is the text of the events page of {source_name}, captured on {today}.

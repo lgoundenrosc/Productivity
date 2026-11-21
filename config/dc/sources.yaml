@@ -31,6 +31,18 @@ other_orgs:
   - {id: afcea,     name: AFCEA,                        url: "https://www.afcea.org/events"}
   - {id: poc,       name: Potomac Officers Club,        url: "https://www.potomacofficersclub.com/upcoming-events/"}
   - {id: darpa,     name: DARPA,                        url: "https://www.darpa.mil/events", fetch: browser}
+  # Business Executives for National Security lists events in every chapter
+  # city on one calendar, so only DC-area and online ones are kept.
+  - id: bens
+    name: BENS (Business Executives for National Security)
+    url: "https://bens.org/events/"
+    fetch: browser   # plain requests get a 403
+    local_only: true
+    sparse: true
+    note: >
+      BENS is a membership group and most of its events are for members and
+      guests. Keep them even when the listing says members only or members
+      and guests, and say which in the summary.
 
 # Happy hours, meetups and founder/investor networking. This worker's
 # events get their own section in the digest.

@@ -13,6 +13,19 @@ networking_workers: [networking]
 # Where LPs gather. Rosc is raising, so this group comes first.
 lp_finance:
   - {id: bostonfed, name: Federal Reserve Bank of Boston, url: "https://www.bostonfed.org/news-and-events/events.aspx", fetch: browser}
+  # Business Executives for National Security: senior executives who back
+  # national security work, many of them potential LPs. One national calendar,
+  # so only Boston-area and online events are kept.
+  - id: bens
+    name: BENS (Business Executives for National Security)
+    url: "https://bens.org/events/"
+    fetch: browser   # plain requests get a 403
+    local_only: true
+    sparse: true
+    note: >
+      BENS is a membership group and most of its events are for members and
+      guests. Keep them even when the listing says members only or members
+      and guests, and say which in the summary.
   - id: lp_search
     name: LP and family office search agent
     fetch: search
