@@ -75,7 +75,7 @@ def _section(name, cards):
     return f'<h2 style="font-size:19px;border-bottom:1px solid #ddd;padding-bottom:4px;margin-top:28px">{e_(name)}</h2>' + "".join(cards)
 
 
-def build(events, profile, today, failures):
+def build(events, profile, today, failures, week_section=True):
     """Each event appears once, in the first section that claims it:
     this week, happy hours and networking, a topic, or big events ahead."""
     week_end = today + timedelta(days=6)
@@ -83,7 +83,7 @@ def build(events, profile, today, failures):
     top = profile["top_pick_score"]
     keep = [e for e in events if e.get("score", 0) >= profile["min_score"]]
     for e in keep:
-        e["this_week"] = date.fromisoformat(e["date"]) <= week_end
+        e["this_week"] = week_section and date.fromisoformat(e["date"]) <= week_end
         e["top_pick"] = e.get("score", 0) >= top
 
     by_date = lambda e: (e["date"], e.get("start_time", ""))
@@ -100,16 +100,16 @@ def build(events, profile, today, failures):
     rest = [e for e in regular if not is_travel(e)]
     this_week = sorted((e for e in rest if e["this_week"]), key=by_date)
     rest = [e for e in rest if not e["this_week"]]
-    networking = sorted((e for e in rest if e.get("event_type") == "networking"
-                         or e.get("worker") == "networking"), key=by_date)
+    networking = sorted((e for e in rest if e.get("event_type") == "networking"), key=by_date)
     rest = [e for e in rest if e not in networking]
 
     parts = ['<div style="font-family:Georgia,serif;font-size:16px;max-width:680px;color:#111">',
              f'<h1 style="font-size:24px">DC events: week of {today:%B} {today.day}</h1>',
-             f'<p style="color:#555;font-size:15px">{len(this_week)} events this week, '
-             f'{len(networking)} happy hours and meetups, {len(rest)} more over the next three weeks '
-             f'and {len(travel)} bigger events further out. DC events you can attend in person rank '
-             'first. NEW marks events not in an earlier digest.</p>']
+             '<p style="color:#555;font-size:15px">' + (
+                 f'{len(this_week)} events this week, {len(networking)} happy hours and meetups, '
+                 f'{len(rest)} more over the next three weeks and {len(travel)} bigger events further out. '
+                 if week_section else f'{len(regular) + len(hearings)} events, grouped by topic. ')
+             + 'DC events you can attend in person rank first. NEW marks events not in an earlier digest.</p>']
     parts.append(_section(f"This week ({today:%b} {today.day} to {week_end:%b} {week_end.day})",
                           [_card(e) for e in this_week]))
     parts.append(_section("Happy hours, meetups and networking", [_card(e) for e in networking]))
