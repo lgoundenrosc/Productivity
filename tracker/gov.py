@@ -16,15 +16,15 @@ def hearings(today, until, committee_terms):
     """Committee meetings scheduled between today and until whose committee
     names match committee_terms. The list endpoint filters on update time,
     so we pull everything updated in the last 45 days and filter by date."""
-    key = os.environ["CONGRESS_API_KEY"]
+    key = os.environ.get("CONGRESS_API_KEY", "")
     congress = _congress_number(today)
     since = (datetime.now(timezone.utc) - timedelta(days=45)).strftime("%Y-%m-%dT%H:%M:%SZ")
     out = []
     for chamber in ("house", "senate"):
         url = f"{CONGRESS_API}/committee-meeting/{congress}/{chamber}"
-        params = {"format": "json", "limit": 250, "fromDateTime": since, "api_key": key}
+        params = {"format": "json", "limit": 250, "fromDateTime": since}
         while url:
-            r = requests.get(url, params=params, timeout=30)
+            r = requests.get(url, params=params, headers=_auth(key), timeout=30)
             r.raise_for_status()
             data = r.json()
             for ref in data.get("committeeMeetings", []):
@@ -51,12 +51,17 @@ def hearings(today, until, committee_terms):
                     "url": f"https://www.congress.gov/event/{congress}th-Congress/{chamber}-event/{m['eventId']}",
                 })
             url = data.get("pagination", {}).get("next")
-            params = {"api_key": key}  # `next` already carries the other params
+            params = {}  # `next` already carries the other params
     return out
 
 
+def _auth(key):
+    # A header rather than ?api_key= so a proxy-stored credential works too.
+    return {"X-Api-Key": key} if key else {}
+
+
 def _meeting(url, key):
-    r = requests.get(url, params={"api_key": key}, timeout=30)
+    r = requests.get(url, headers=_auth(key), timeout=30)
     if r.status_code == 404:
         return None
     r.raise_for_status()

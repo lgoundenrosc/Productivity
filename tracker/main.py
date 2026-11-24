@@ -51,8 +51,6 @@ def scrape_group(sources, today, until, fetch_only, networking=False):
 def gov_worker(kind, cfg, today, until, fetch_only):
     try:
         if kind == "hill":
-            if not os.environ.get("CONGRESS_API_KEY"):
-                return [], [("Congress.gov", "CONGRESS_API_KEY not set")]
             evs = gov.hearings(today, today + timedelta(days=21), cfg["hill_committees"])
         else:
             if not os.environ.get("SAM_API_KEY"):

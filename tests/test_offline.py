@@ -58,7 +58,7 @@ def test_hearings_filter(monkeypatch):
                "committees": [{"name": "Senate Armed Services"}], "meetingStatus": "Scheduled"},
     }
 
-    def fake_get(url, params=None, timeout=None):
+    def fake_get(url, params=None, headers=None, timeout=None):
         r = mock.Mock(status_code=200)
         r.json.return_value = listing if "committee-meeting/119" in url else {"committeeMeeting": meetings[url]}
         return r
